@@ -1,47 +1,21 @@
 package classes;
 
+import classes.nodes.Node;
+
 public class Connection {
-    private int inNeuronId;
-    private int outNeuronId;
-    private double weight;
-    private boolean enabled;
+    public int innovationID;
+    public int inNodeID;
+    public int outNodeID;
+    public double weight;
+    public boolean isEnabled;
+    public boolean isRecurrent;
 
-    public Connection(int inNeuronId, int outNeuronId, double weight) {
-        this.inNeuronId = inNeuronId;
-        this.outNeuronId = outNeuronId;
+    public Connection(int innovationID, int inNodeID, int outNodeID, double weight, boolean isEnabled, boolean isRecurrent) {
+        this.innovationID = innovationID;
+        this.inNodeID = inNodeID;
+        this.outNodeID = outNodeID;
         this.weight = weight;
-        this.enabled = true;
-    }
-
-    public int getInNeuronId() {
-        return inNeuronId;
-    }
-
-    public void setInNeuronId(int inNeuronId) {
-        this.inNeuronId = inNeuronId;
-    }
-
-    public int getOutNeuronId() {
-        return outNeuronId;
-    }
-
-    public void setOutNeuronId(int outNeuronId) {
-        this.outNeuronId = outNeuronId;
-    }
-
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        this.isEnabled = isEnabled;
+        this.isRecurrent = isRecurrent;
     }
 }

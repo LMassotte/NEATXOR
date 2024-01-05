@@ -1,24 +1,38 @@
 package classes;
 
-import classes.neurons.Neuron;
+import classes.nodes.Node;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class Genome {
-    private List<Neuron> neurons;
+    private List<Node> nodes;
     private List<Connection> connections;
 
-    public Genome(List<Neuron> neurons, List<Connection> connections) {
-        this.neurons = neurons;
+    public Genome(List<Node> nodes, List<Connection> connections) {
+        this.nodes = nodes;
         this.connections = connections;
     }
 
-    public List<Neuron> getNeurons() {
-        return neurons;
+    //renvoie les connections allant vers un neurone
+    public List<Connection> getConnectionsForNeuron(int neuronId) {
+        List<Connection> neuronConnections = new ArrayList<>();
+
+        for (Connection connection : connections) {
+            if (connection.getOutNeuron().getId() == neuronId) {
+                neuronConnections.add(connection);
+            }
+        }
+
+        return neuronConnections;
     }
 
-    public void setNeurons(List<Neuron> neurons) {
-        this.neurons = neurons;
+    public List<Node> getNeurons() {
+        return nodes;
+    }
+
+    public void setNeurons(List<Node> nodes) {
+        this.nodes = nodes;
     }
 
     public List<Connection> getConnections() {
