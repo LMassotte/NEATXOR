@@ -1,7 +1,5 @@
 package classes;
 
-import classes.nodes.Node;
-
 public class Connection {
     public int innovationID;
     public int inNodeID;
