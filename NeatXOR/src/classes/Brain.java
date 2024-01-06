@@ -72,7 +72,7 @@ public class Brain {
         double weight = 0;
         if(generationNumber == 1){
             Random random = new Random();
-            weight = random.nextDouble();
+            weight = random.nextDouble() * 2 - 1;
         }
         neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
         neatParameters.innovationIDsCounter += 1000;
