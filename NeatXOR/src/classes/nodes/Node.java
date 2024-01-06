@@ -1,7 +1,5 @@
 package classes.nodes;
 
-import classes.NeatParameters;
-
 public class Node {
     public int id;
     public int nodeType;

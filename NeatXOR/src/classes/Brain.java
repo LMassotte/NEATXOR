@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import static java.lang.Math.exp;
 
 public class Brain {
-    private NeatParameters neatParameters;
+    private final NeatParameters neatParameters;
     public int outputNodeID;
     public double fitness;
     public int speciesID;
@@ -41,26 +41,26 @@ public class Brain {
         switch (nodeType) {
             //input node
             case 1:
-                neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++neatParameters.nodeIDsCounter;
+                neatParameters.inputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++NeatParameters.nodeIDsCounter;
                 break;
 
             //output node
             case 2:
-                neatParameters.outputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++neatParameters.nodeIDsCounter;
+                neatParameters.outputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++NeatParameters.nodeIDsCounter;
                 break;
 
             //bias node
             case 3:
-                neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++neatParameters.nodeIDsCounter;
+                neatParameters.inputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++NeatParameters.nodeIDsCounter;
                 break;
 
             //hidden node
             case 0:
-                neatParameters.hiddenNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++neatParameters.nodeIDsCounter;
+                neatParameters.hiddenNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++NeatParameters.nodeIDsCounter;
                 break;
 
             default:
@@ -70,8 +70,8 @@ public class Brain {
 
     //always add a connection through this to ensure that innovation ids are different
     public void addConnection(int inNodeID, int outNodeID, double weight, boolean isEnabled, boolean isRecurrent) {
-        neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
-        neatParameters.innovationIDsCounter += 1000;
+        neatParameters.connections.add(new Connection(NeatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
+        NeatParameters.innovationIDsCounter += 1000;
     }
 
     public void drawNetwork() {
@@ -124,6 +124,7 @@ public class Brain {
                         for (Connection connection : neatParameters.connections) {
                             if (hiddenNode.id == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
+                                assert connectionInputNode != null;
                                 hiddenNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
                             }
                         }
@@ -139,6 +140,7 @@ public class Brain {
                         for (Connection connection : neatParameters.connections) {
                             if (outputNode.id == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
+                                assert connectionInputNode != null;
                                 outputNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
                             }
                         }
@@ -180,7 +182,7 @@ public class Brain {
     }
 
     public double getOutput(int nodeID){
-        return findNodeById(nodeID).sumOutput;
+        return findNodeById(nodeID) != null ? findNodeById(nodeID).sumOutput : -1;
     }
 
 }

@@ -7,16 +7,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class NeuralNetworkCanvas extends JPanel {
-    private int maxLayer;
-    private int maxNodesCount;
-    private int nodeHeight;
-    private List<Node> inputNodes;
-    private List<Node> hiddenNodes;
-    private List<Node> outputNodes;
-    private List<Connection> connections;
+    private final int maxLayer;
+    private final int maxNodesCount;
+    private final double nodeHeight;
+    private final List<Node> inputNodes;
+    private final List<Node> hiddenNodes;
+    private final List<Node> outputNodes;
+    private final List<Connection> connections;
 
     public NeuralNetworkCanvas(List<Node> inputNodes, List<Node> hiddenNodes, List<Node> outputNodes, List<Connection> connections) {
         this.inputNodes = inputNodes;
@@ -33,7 +32,7 @@ public class NeuralNetworkCanvas extends JPanel {
         maxLayer = getMaxLayer(outputNodes);
         maxNodesCount = Math.max(inputNodes.size(), Math.max(outputNodes.size(), hiddenNodes.size()));
 
-        nodeHeight = 20;
+        nodeHeight = 20.0;
     }
 
     @Override
@@ -49,8 +48,8 @@ public class NeuralNetworkCanvas extends JPanel {
         //1 = input layer, max layer = output layer. This loop manages hidden nodes in different layers
         for (int i = 2; i < maxLayer; i++) {
             int finalI = i;
-            List<Node> hiddenNodesSublits = hiddenNodes.stream().filter(node -> node.nodeLayer == finalI).toList();
-            drawNodes(g, hiddenNodesSublits);
+            List<Node> hiddenNodesSublist = hiddenNodes.stream().filter(node -> node.nodeLayer == finalI).toList();
+            drawNodes(g, hiddenNodesSublist);
         }
         drawNodes(g, outputNodes);
     }
@@ -84,6 +83,7 @@ public class NeuralNetworkCanvas extends JPanel {
             Node outNode = findNodeById(connection.outNodeID);
 
             // find position for inNode when it's an input node
+            assert inNode != null;
             if (inNode.nodeType == 1 || inNode.nodeType == 3) {
                 int nodePosition = (findNodePosition(inputNodes, inNode.id) + 1);
                 inX = inNode.nodeLayer * 100 + 10;
@@ -106,6 +106,7 @@ public class NeuralNetworkCanvas extends JPanel {
                 inY = (int) (distanceInter * nodePosition) + 10 + (20 * (nodePosition - 1)) + 10;
             }
             // find position for outNode when it's an input node
+            assert outNode != null;
             if (outNode.nodeType == 1 || outNode.nodeType == 3) {
                 int nodePosition = (findNodePosition(inputNodes, outNode.id) + 1);
                 outX = outNode.nodeLayer * 100 + 10;
