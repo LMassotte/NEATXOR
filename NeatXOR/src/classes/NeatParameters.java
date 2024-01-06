@@ -1,5 +1,6 @@
 package classes;
 
+import classes.nodes.Connection;
 import classes.nodes.Node;
 
 import java.util.ArrayList;

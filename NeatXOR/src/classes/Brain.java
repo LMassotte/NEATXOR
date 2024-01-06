@@ -1,38 +1,47 @@
 package classes;
 
 import classes.canvas.NeuralNetworkCanvas;
+import classes.nodes.Connection;
 import classes.nodes.Node;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.Random;
 
 import static java.lang.Math.exp;
 
 public class Brain {
+    public int brainID;
     public NeatParameters neatParameters;
     public int outputNodeID;
     public double fitness;
     public int speciesID;
 
-    public Brain(NeatParameters neatParameters) {
+    public Brain(NeatParameters neatParameters, int id) {
+
         this.neatParameters = neatParameters;
+        this.brainID = id;
     }
 
-    public void initialize() {
+    public void initialize(int generationNumber) {
         this.fitness = 0;
+        this.speciesID = -1;
         neatParameters.reinitializeParameters();
 
-        addNode(1, 1, 0, 0);
-        addNode(1, 1, 0, 0);
-        addNode(3, 1, 0, 0);
-        addNode(2, 3, 0, 0);
+        if(generationNumber == 1){
+            addNode(1, 1, 0, 0);
+            addNode(1, 1, 0, 0);
+            addNode(3, 1, 0, 0);
+            addNode(2, 3, 0, 0);
 
-        outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
+            outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
 
-        addConnection(1, outputNodeID, true, false, 1);
-        addConnection(2, outputNodeID, true, false, 1);
-        addConnection(3, outputNodeID, true, false, 1);
+            addConnection(1, outputNodeID, true, false, 1);
+            addConnection(2, outputNodeID, true, false, 1);
+            addConnection(3, outputNodeID, true, false, 1);
+        }
+        else{
+
+        }
     }
 
     //always add a node through this to ensure that ids are different
@@ -97,7 +106,6 @@ public class Brain {
 
     public void loadInputs(double[] inputValuesList) {
         int max = Math.max(inputValuesList.length, neatParameters.inputNodesNumber);
-        System.out.println(max);
         for (int i = 0; i < max; i++) {
             neatParameters.inputNodes.get(i).sumInput = inputValuesList[i];
             //input nodes => sum input = sum output
@@ -154,7 +162,7 @@ public class Brain {
             }
         }
         // print results
-        printSumOutputs();
+//        printSumOutputs();
     }
 
     private Node findNodeById(int nodeId) {
@@ -191,6 +199,7 @@ public class Brain {
 
     public void copyFrom(Brain other) {
         // copy parameters
+        this.brainID = other.brainID;
         this.neatParameters = new NeatParameters(other.neatParameters.populationSize,
                 other.neatParameters.inputNodesNumber,
                 other.neatParameters.outputNodesNumber,

@@ -1,6 +1,6 @@
 package classes.canvas;
 
-import classes.Connection;
+import classes.nodes.Connection;
 import classes.nodes.Node;
 
 import javax.swing.*;

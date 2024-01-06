@@ -1,4 +1,4 @@
-package classes;
+package classes.nodes;
 
 public class Connection {
     public int innovationID;
