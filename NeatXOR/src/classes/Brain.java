@@ -14,6 +14,7 @@ public class Brain {
     public NeatParameters neatParameters;
     public int outputNodeID;
     public double fitness;
+    public double adjustedFitness;
     public int speciesID;
 
     public Brain(NeatParameters neatParameters, int id) {
@@ -24,6 +25,7 @@ public class Brain {
 
     public void initialize(int generationNumber) {
         this.fitness = 0;
+        this.adjustedFitness = 0;
         this.speciesID = -1;
         neatParameters.reinitializeParameters();
 
@@ -207,6 +209,7 @@ public class Brain {
                 other.neatParameters.percentageConn);
 
         this.fitness = other.fitness;
+        this.adjustedFitness = other.adjustedFitness;
         this.outputNodeID = other.outputNodeID;
         this.speciesID = other.speciesID;
 

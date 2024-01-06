@@ -20,9 +20,12 @@ public class Main {
     public static double speciationThreshold = 0.1;
 
     //used to keep data through generations
-    public static double bestFitnessInPopulation = 0;
+    public static double bestAdjustedFitnessInPopulation = 0;
     public static Brain bestBrain = null;
     public static List<Brain> generation;
+
+    //used for next generation building (the offsprings are in the order of the species)
+    public static List<Integer> offsprings;
 
     public static void main(String[] args) {
 
@@ -51,24 +54,33 @@ public class Main {
                     brain.fitness += brain.getOutput(brain.outputNodeID);
                 }
                 // keep the best brain in a variable
-                if (brain.fitness > bestFitnessInPopulation) {
-                    bestBrain = new Brain(neatParameters, -1);
-                    bestBrain.copyFrom(brain);
-                    bestFitnessInPopulation = brain.fitness;
-                }
+
 
                 generation.add(brain);
             }
             // build the next generation
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
             setSpeciesIDs();
-            for (Brain generationBrain : generation) {
-                System.out.println("Brain " + generationBrain.brainID + " in generation " + generationsNumber + " has a species ID = " + generationBrain.speciesID);
+            // Divide the fitness by the amount of brains having the speciesID
+            adjustFitness();
+            // Compute the offsprings (amount of members from each specie in the next generation)
+            computeOffsprings();
+            for(int i = 0; i < offsprings.size(); i++){
+                System.out.println("The next generation will have " + offsprings.get(i) + " members of specie " + (i + 1));
             }
         }
 
-        // display best brain
+        // find and display best brain in generation
+        for (Brain generationBrain : generation) {
+            if (generationBrain.adjustedFitness > bestAdjustedFitnessInPopulation) {
+                bestBrain = new Brain(generationBrain.neatParameters, -1);
+                bestBrain.copyFrom(generationBrain);
+                bestAdjustedFitnessInPopulation = generationBrain.adjustedFitness;
+            }
+        }
         if (bestBrain != null) {
+            System.out.println("Best brain is brain " + bestBrain.brainID + " in the (last) generation " + generationsNumber);
+            System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
             bestBrain.drawNetwork();
         }
     }
@@ -232,7 +244,6 @@ public class Main {
             // compare every other non-assigned brain with it. If CD > threshold, give it the same speciesID.
             for (Brain brain : brainsWithoutSpecies) {
                 double cd = getCompatibilityDifference(brainLeader, brain);
-                System.out.println("CD : " + cd);
                 if (cd < speciationThreshold) {
                     generation.get(brain.brainID - 1).speciesID = speciesCount;
                 }
@@ -252,5 +263,65 @@ public class Main {
 
     private static List<Brain> getBrainsWithoutSpecies(List<Brain> brains) {
         return brains.stream().filter(brain -> brain.speciesID == -1).collect(Collectors.toList());
+    }
+
+    private static void adjustFitness(){
+        for (Brain brain : generation){
+            List<Brain> sameSpecieBrains = getSameSpeciesBrain(brain.speciesID);
+            long sameSpecieAmount = sameSpecieBrains.size();
+            brain.adjustedFitness = brain.fitness / sameSpecieAmount;
+        }
+    }
+    private static List<Brain> getSameSpeciesBrain(int specieID){
+        return generation.stream().filter(obj -> obj.speciesID == specieID).toList();
+    }
+
+    private static int getDifferentSpeciesCount(){
+        int highestSpecieID = 0;
+        for(Brain brain : generation){
+            if(brain.speciesID > highestSpecieID){
+                highestSpecieID = brain.speciesID;
+            }
+        }
+
+        // The highest specie ID is always the amount of different species
+        return highestSpecieID;
+    }
+
+    private static double getGlobalAverageAdjustedFitness(){
+        double sum = 0;
+        for(Brain brain : generation){
+            sum += brain.adjustedFitness;
+        }
+
+        return (sum / generation.size());
+    }
+
+    private static double getAverageAdjustedFitnessBySpecie(int specieID){
+        double sum = 0;
+        List<Brain> sameSpecieBrains = getSameSpeciesBrain(specieID);
+        long sameSpecieAmount = sameSpecieBrains.size();
+        for(Brain brain : sameSpecieBrains){
+            sum += brain.adjustedFitness;
+        }
+
+        return (sum / sameSpecieAmount);
+    }
+
+    private static void computeOffsprings(){
+        offsprings = new ArrayList<>();
+
+        //global average adjusted fitness
+        double globalMean = getGlobalAverageAdjustedFitness();
+
+        // how many different species ?
+        int differentSpeciesCounter = getDifferentSpeciesCount();
+        // loop on this number so each specie will have its average adjusted fitness
+        for(int i = 1; i <= differentSpeciesCounter; i++){
+            List<Brain> specieMembers = getSameSpeciesBrain(i);
+            double specieMean = getAverageAdjustedFitnessBySpecie(i);
+
+            offsprings.add((int)(specieMean / globalMean * specieMembers.size()));
+        }
     }
 }
