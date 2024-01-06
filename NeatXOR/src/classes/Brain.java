@@ -5,11 +5,12 @@ import classes.nodes.Node;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 import static java.lang.Math.exp;
 
 public class Brain {
-    private final NeatParameters neatParameters;
+    public NeatParameters neatParameters;
     public int outputNodeID;
     public double fitness;
     public int speciesID;
@@ -19,10 +20,8 @@ public class Brain {
     }
 
     public void initialize() {
-        neatParameters.inputNodes = new ArrayList<>();
-        neatParameters.outputNodes = new ArrayList<>();
-        neatParameters.hiddenNodes = new ArrayList<>();
-        neatParameters.connections = new ArrayList<>();
+        this.fitness = 0;
+        neatParameters.reinitializeParameters();
 
         addNode(1, 1, 0, 0);
         addNode(1, 1, 0, 0);
@@ -31,9 +30,9 @@ public class Brain {
 
         outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
 
-        addConnection(1, outputNodeID, 3.1, true, false);
-        addConnection(2, outputNodeID, 7.9, true, false);
-        addConnection(3, outputNodeID, 1.9, true, false);
+        addConnection(1, outputNodeID, true, false, 1);
+        addConnection(2, outputNodeID, true, false, 1);
+        addConnection(3, outputNodeID, true, false, 1);
     }
 
     //always add a node through this to ensure that ids are different
@@ -41,26 +40,26 @@ public class Brain {
         switch (nodeType) {
             //input node
             case 1:
-                neatParameters.inputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++NeatParameters.nodeIDsCounter;
+                neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++neatParameters.nodeIDsCounter;
                 break;
 
             //output node
             case 2:
-                neatParameters.outputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++NeatParameters.nodeIDsCounter;
+                neatParameters.outputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++neatParameters.nodeIDsCounter;
                 break;
 
             //bias node
             case 3:
-                neatParameters.inputNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++NeatParameters.nodeIDsCounter;
+                neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++neatParameters.nodeIDsCounter;
                 break;
 
             //hidden node
             case 0:
-                neatParameters.hiddenNodes.add(new Node(NeatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
-                ++NeatParameters.nodeIDsCounter;
+                neatParameters.hiddenNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                ++neatParameters.nodeIDsCounter;
                 break;
 
             default:
@@ -69,9 +68,14 @@ public class Brain {
     }
 
     //always add a connection through this to ensure that innovation ids are different
-    public void addConnection(int inNodeID, int outNodeID, double weight, boolean isEnabled, boolean isRecurrent) {
-        neatParameters.connections.add(new Connection(NeatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
-        NeatParameters.innovationIDsCounter += 1000;
+    public void addConnection(int inNodeID, int outNodeID, boolean isEnabled, boolean isRecurrent, int generationNumber) {
+        double weight = 0;
+        if(generationNumber == 1){
+            Random random = new Random();
+            weight = random.nextDouble();
+        }
+        neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
+        neatParameters.innovationIDsCounter += 1000;
     }
 
     public void drawNetwork() {
@@ -183,6 +187,47 @@ public class Brain {
 
     public double getOutput(int nodeID){
         return findNodeById(nodeID) != null ? findNodeById(nodeID).sumOutput : -1;
+    }
+
+    public void copyFrom(Brain other) {
+        // copy parameters
+        this.neatParameters = new NeatParameters(other.neatParameters.populationSize,
+                other.neatParameters.inputNodesNumber,
+                other.neatParameters.outputNodesNumber,
+                other.neatParameters.hiddenNodesNumber,
+                other.neatParameters.percentageConn);
+
+        this.fitness = other.fitness;
+        this.outputNodeID = other.outputNodeID;
+        this.speciesID = other.speciesID;
+
+        // copy input nodes
+        this.neatParameters.inputNodes.clear();
+        for (Node inputNode : other.neatParameters.inputNodes) {
+            this.neatParameters.inputNodes.add(new Node(inputNode.id, inputNode.nodeType, inputNode.nodeLayer, inputNode.sumInput, inputNode.sumOutput));
+        }
+
+        // copy hidden nodes
+        this.neatParameters.hiddenNodes.clear();
+        for (Node hiddenNode : other.neatParameters.hiddenNodes) {
+            this.neatParameters.hiddenNodes.add(new Node(hiddenNode.id, hiddenNode.nodeType, hiddenNode.nodeLayer, hiddenNode.sumInput, hiddenNode.sumOutput));
+        }
+
+        // copy output nodes
+        this.neatParameters.outputNodes.clear();
+        for (Node outputNode : other.neatParameters.outputNodes) {
+            this.neatParameters.outputNodes.add(new Node(outputNode.id, outputNode.nodeType, outputNode.nodeLayer, outputNode.sumInput, outputNode.sumOutput));
+        }
+
+        // copy connections
+        this.neatParameters.connections.clear();
+        for (Connection connection : other.neatParameters.connections) {
+            this.neatParameters.connections.add(new Connection(connection.innovationID, connection.inNodeID, connection.outNodeID, connection.weight, connection.isEnabled, connection.isRecurrent));
+        }
+
+        // copy id counters (can be deleted imo)
+        this.neatParameters.nodeIDsCounter = other.neatParameters.nodeIDsCounter;
+        this.neatParameters.innovationIDsCounter = other.neatParameters.innovationIDsCounter;
     }
 
 }

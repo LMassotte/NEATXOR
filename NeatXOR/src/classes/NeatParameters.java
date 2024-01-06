@@ -6,33 +6,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NeatParameters {
-    int populationSize;
-    int inputNodesNumber;
-    int outputNodesNumber;
-    int hiddenNodesNumber;
-    List<Node> inputNodes;
-    List<Node> hiddenNodes;
-    List<Node> outputNodes;
-    List<Connection> connections;
-    double percentageConn;
+    public int populationSize;
+    public int inputNodesNumber;
+    public int outputNodesNumber;
+    public int hiddenNodesNumber;
+    public List<Node> inputNodes;
+    public List<Node> hiddenNodes;
+    public  List<Node> outputNodes;
+    public List<Connection> connections;
+    public double percentageConn;
 
     //will be incremented everytime a new node is created
-    static int nodeIDsCounter;
+    public int nodeIDsCounter;
     //will be incremented everytime a new connection is created
-    static int innovationIDsCounter;
+    public int innovationIDsCounter;
 
-    public NeatParameters(int populationSize, int inputNodesNumber, int outputNodesNumber, int hiddenNodesNumber, double pourcentageConn){
+    public NeatParameters(int populationSize, int inputNodesNumber, int outputNodesNumber, int hiddenNodesNumber, double percentageConn){
         this.populationSize = populationSize;
         this.inputNodesNumber = inputNodesNumber;
         this.outputNodesNumber = outputNodesNumber;
         this.hiddenNodesNumber = hiddenNodesNumber;
-        this.percentageConn = pourcentageConn;
+        this.percentageConn = percentageConn;
         this.inputNodes = new ArrayList<>();
         this.outputNodes = new ArrayList<>();
         this.hiddenNodes = new ArrayList<>();
         this.connections = new ArrayList<>();
 
-        nodeIDsCounter = 1;
-        innovationIDsCounter = 5;
+        this.nodeIDsCounter = 1;
+        this.innovationIDsCounter = 5;
+    }
+
+    public void reinitializeParameters(){
+        this.inputNodes = new ArrayList<>();
+        this.outputNodes = new ArrayList<>();
+        this.hiddenNodes = new ArrayList<>();
+        this.connections = new ArrayList<>();
+
+        this.nodeIDsCounter = 1;
+        this.innovationIDsCounter = 5;
     }
 }

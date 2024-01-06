@@ -9,6 +9,8 @@ public class Main {
         int popSize = 50;
         int inputNodesNumber = 3, outputNodesNumber = 1, hiddenNodesNumber = 0;
         double percentageConn = 1.0;
+        double bestFitnessInPopulation = 0;
+        Brain bestBrain = null;
 
         //possible values for xor
         List<double[]> inputValuesList = new ArrayList<>();
@@ -19,14 +21,22 @@ public class Main {
 
         NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
         Brain brain = new Brain(neatParameters);
-
-        brain.initialize();
-        for (double[] inputValues : inputValuesList) {
-            brain.loadInputs(inputValues);
-            brain.drawNetwork();
-            brain.runNetwork();
-            brain.fitness += brain.getOutput(brain.outputNodeID);
+        for(int i = 0; i < brain.neatParameters.populationSize; i++){
+            brain.initialize();
+            for (double[] inputValues : inputValuesList) {
+                brain.loadInputs(inputValues);
+                brain.runNetwork();
+                brain.fitness += brain.getOutput(brain.outputNodeID);
+            }
+            if(brain.fitness > bestFitnessInPopulation){
+                bestBrain = new Brain(neatParameters);
+                bestBrain.copyFrom(brain);
+                bestFitnessInPopulation = brain.fitness;
+            }
+            System.out.println("Best fitness for this population : " + bestFitnessInPopulation);
         }
-        System.out.println("Final fitness : " + brain.fitness);
+        if (bestBrain != null) {
+            bestBrain.drawNetwork();
+        }
     }
 }

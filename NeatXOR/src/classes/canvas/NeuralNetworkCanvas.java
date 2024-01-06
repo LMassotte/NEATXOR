@@ -83,7 +83,6 @@ public class NeuralNetworkCanvas extends JPanel {
             Node outNode = findNodeById(connection.outNodeID);
 
             // find position for inNode when it's an input node
-            assert inNode != null;
             if (inNode.nodeType == 1 || inNode.nodeType == 3) {
                 int nodePosition = (findNodePosition(inputNodes, inNode.id) + 1);
                 inX = inNode.nodeLayer * 100 + 10;
