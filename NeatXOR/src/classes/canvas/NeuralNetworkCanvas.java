@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NeuralNetworkCanvas extends JPanel {
     private int maxLayer;
@@ -41,7 +42,12 @@ public class NeuralNetworkCanvas extends JPanel {
         drawConnections(g, connections);
         // Draw all nodes
         drawNodes(g, inputNodes);
-        drawNodes(g, hiddenNodes);
+        //1 = input layer, max layer = output layer. This loop manages hidden nodes in different layers
+        for(int i = 2; i <maxLayer; i++){
+            int finalI = i;
+            List<Node> hiddenNodesSublits = hiddenNodes.stream().filter(node -> node.nodeLayer == finalI).toList();
+            drawNodes(g, hiddenNodesSublits);
+        }
         drawNodes(g, outputNodes);
     }
 
@@ -56,7 +62,6 @@ public class NeuralNetworkCanvas extends JPanel {
 
             double x = node.nodeLayer * 100;
             double y = (distanceInter * index) + 10 + (20 * (index -1));
-            System.out.println(y);
             g.fillOval((int) x, (int) y, 20, 20); // node = circle
             g.drawString(String.valueOf(node.id), (int)x + 8, (int)y + 12); // node id
             ++index;
@@ -77,42 +82,45 @@ private void drawConnections(Graphics g, List<Connection> connections) {
         // find position for inNode when it's an input node
         if (inNode.nodeType == 1 || inNode.nodeType == 3) {
             int nodePosition = (findNodePosition(inputNodes, inNode.id) + 1);
-            inX = 110;
+            inX = inNode.nodeLayer * 100 + 10;
             double distanceInter = (maxHeight - ((double) inputNodes.size() * 20)) / ((double) inputNodes.size() + 1);
             inY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }
         // find position for inNode when it's a hidden node
         else if (inNode.nodeType == 0) {
-            int nodePosition = (findNodePosition(hiddenNodes, inNode.id) + 1);
-            inX = 210;
-            double distanceInter = (maxHeight - ((double) hiddenNodes.size() * 20)) / ((double) hiddenNodes.size() + 1);
+            List<Node> sameLayerHiddenNodes = hiddenNodes.stream().filter(node -> node.nodeLayer == inNode.nodeLayer).toList();
+            System.out.println(sameLayerHiddenNodes.size());
+            int nodePosition = (findNodePosition(sameLayerHiddenNodes, inNode.id) + 1);
+            inX = inNode.nodeLayer * 100 + 10;
+            double distanceInter = (maxHeight - ((double) sameLayerHiddenNodes.size() * 20)) / ((double) sameLayerHiddenNodes.size() + 1);
             inY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }
         // find position for inNode when it's an output node
         else if (inNode.nodeType == 2) {
             int nodePosition = (findNodePosition(outputNodes, inNode.id) + 1);
-            inX = 310;
+            inX = inNode.nodeLayer * 100 + 10;
             double distanceInter = (maxHeight - ((double) outputNodes.size() * 20)) / ((double) outputNodes.size() + 1);
             inY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }
         // find position for outNode when it's an input node
         if (outNode.nodeType == 1 || outNode.nodeType == 3) {
             int nodePosition = (findNodePosition(inputNodes, outNode.id) + 1);
-            outX = 110;
+            outX = outNode.nodeLayer * 100 + 10;
             double distanceInter = (maxHeight - ((double) inputNodes.size() * 20)) / ((double) inputNodes.size() + 1);
             outY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }
         // find position for outNode when it's a hidden node
         else if (outNode.nodeType == 0) {
-            int nodePosition = (findNodePosition(hiddenNodes, outNode.id) + 1);
-            outX = 210;
-            double distanceInter = (maxHeight - ((double) hiddenNodes.size() * 20)) / ((double) hiddenNodes.size() + 1);
+            List<Node> sameLayerHiddenNodes = hiddenNodes.stream().filter(node -> node.nodeLayer == outNode.nodeLayer).toList();
+            int nodePosition = (findNodePosition(sameLayerHiddenNodes, outNode.id) + 1);
+            outX = outNode.nodeLayer * 100 + 10;
+            double distanceInter = (maxHeight - ((double) sameLayerHiddenNodes.size() * 20)) / ((double) sameLayerHiddenNodes.size() + 1);
             outY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }
         // find position for outNode when it's an output node
         else if (outNode.nodeType == 2) {
             int nodePosition = (findNodePosition(outputNodes, outNode.id) + 1);
-            outX = 310;
+            outX = outNode.nodeLayer * 100 + 10;
             double distanceInter = (maxHeight - ((double) outputNodes.size() * 20)) / ((double) outputNodes.size() + 1);
             outY = (int)(distanceInter * nodePosition) + 10 + (20 * (nodePosition -1)) + 10;
         }

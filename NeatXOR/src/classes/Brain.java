@@ -28,7 +28,7 @@ public class Brain {
         AddConnection(1, 5, 3.1, true, false);
         AddConnection(2, 5, 7.9, true, false);
         AddConnection(3, 5, 1.9, true, false);
-        AddConnection(5, 4, 9.9, true, false);
+        AddConnection(5, 4, 1.9, true, false);
     }
 
     //always add a node through this to ensure that ids are different
@@ -87,7 +87,7 @@ public class Brain {
     }
 
     public void LoadInputs(){
-
+        
     }
 
     public void Mutate(){
