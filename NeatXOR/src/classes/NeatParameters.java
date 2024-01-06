@@ -14,7 +14,7 @@ public class NeatParameters {
     List<Node> hiddenNodes;
     List<Node> outputNodes;
     List<Connection> connections;
-    double pourcentageConn;
+    double percentageConn;
 
     //will be incremented everytime a new node is created
     static int nodeIDsCounter;
@@ -26,7 +26,7 @@ public class NeatParameters {
         this.inputNodesNumber = inputNodesNumber;
         this.outputNodesNumber = outputNodesNumber;
         this.hiddenNodesNumber = hiddenNodesNumber;
-        this.pourcentageConn = pourcentageConn;
+        this.percentageConn = pourcentageConn;
         this.inputNodes = new ArrayList<>();
         this.outputNodes = new ArrayList<>();
         this.hiddenNodes = new ArrayList<>();
