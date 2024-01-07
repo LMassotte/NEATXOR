@@ -11,7 +11,8 @@ import java.util.*;
 
 public class Main {
     // general parameters
-    public static int generationsNumber = 1;
+    public static boolean isElitist = true;
+    public static int generationsNumber = 3;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
     public static int inputNodesNumber = 3;
@@ -60,26 +61,46 @@ public class Main {
 
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
-            generationMembers = new ArrayList<>();
             brainIDsCounter = 1;
             // 1. GENERATION PLAYS
 
-            for (int i = 0; i < popSize; i++) {
-                //build neatParameters and Brain
-                NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
-                Brain brain = new Brain(neatParameters, brainIDsCounter);
-                //increment counter so that each brain has a unique ID.
-                ++brainIDsCounter;
-                brain.initialize(actualGeneration);
-                // each generation will play with the 4 possible values of XOR, weights are randomized
-                for (double[] inputValues : inputValuesList) {
-                    brain.loadInputs(inputValues);
-                    brain.runNetwork();
-                    // set fitness
-                    brain.fitness += brain.getOutput(brain.outputNodeID);
+            // Initialize first generation if needed
+            if(actualGeneration == 1){
+                generationMembers = new ArrayList<>();
+                for (int i = 0; i < popSize; i++) {
+                    //build neatParameters and Brain
+                    NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
+                    Brain brain = new Brain(neatParameters, brainIDsCounter);
+                    //increment counter so that each brain has a unique ID.
+                    ++brainIDsCounter;
+                    brain.initialize(actualGeneration);
+                    // first generation will play with the 4 possible values of XOR, weights are randomized
+                    for (double[] inputValues : inputValuesList) {
+                        brain.loadInputs(inputValues);
+                        brain.runNetwork();
+                        // set fitness
+                        brain.fitness += brain.getOutput(brain.outputNodeID);
+                    }
+                    // add brain to the generation's population
+                    generationMembers.add(brain);
                 }
-                // add brain to the generation's population
-                generationMembers.add(brain);
+            }
+            else{
+                for (int i = 0; i < popSize; i++) {
+                    // This time the population is already initialized.
+                    // It has been done in step 3 of the previous generation.
+                    Brain generationalBrain = generationMembers.get(i);
+                    // each generation will play with the 4 possible values of XOR, weights are randomized
+                    // TODO : Will mutation have the possibility to add an input node ? I don't think so but can be
+                    for (int j = 0; j < generationalBrain.neatParameters.inputNodesNumber; j++) {
+                        // run network
+                        generationalBrain.runNetwork();
+                        // set fitness
+                        generationalBrain.fitness += generationalBrain.getOutput(generationalBrain.outputNodeID);
+                    }
+                    // add brain to the generation's population
+                    generationMembers.set(i, generationalBrain);
+                }
             }
 
             // 2. COLLECT INFO ABOUT GENERATION AND UPDATE PARAMETERS
@@ -96,12 +117,12 @@ public class Main {
             // For new species : Add a new Specie to the list.
             SpeciesHelper.updateSpecies(species, generationMembers, offsprings);
             // Display information about the generation that just played
-//            DisplayGenerationInformation();
+            DisplayGenerationInformation(actualGeneration);
             // Update best brain in generation and display it
             bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
             bestBrainsFromEachGeneration.add(bestBrain);
             // Draw best brain and display information about the generation
-//            DrawBestBrain();
+            DrawBestBrain(actualGeneration);
 
             // 3. CREATE THE NEXT GENERATION
 
@@ -109,14 +130,15 @@ public class Main {
             resetGenerationMembers();
             // For each existing specie, add offsprings to the next generation
             fillGenerationMembersWithOffsprings();
-
-//            for(Brain brain : generationMembers){
-//                System.out.println("Brain " + brain.brainID + " from specie " + brain.speciesID + " has an adjusted fitness of " + brain.adjustedFitness);
-//            }
             // Look if generation is complete
             // Otherwise, fill it with the best creatures from a specie
             fillGenerationPopulation();
             //
+
+            // 4. ELITISME
+            if(isElitist){
+                generationMembers.set(0, bestBrain);
+            }
 
         }
     }
@@ -140,17 +162,18 @@ public class Main {
             // Get the fittest brain of the specie
             List<Brain> specieBrains = BrainsHelper.getSameSpeciesBrain(randomSpecieID, temporaryGenerationMembers);
             // Add it to the generation
-            Brain brainToAdd = BrainsHelper.getFittestInList(specieBrains);
-            generationMembers.set(counter, brainToAdd);
+            if(specieBrains.size() > 0){
+                Brain brainToAdd = BrainsHelper.getFittestInList(specieBrains);
+                generationMembers.set(counter, brainToAdd);
+                ++counter;
+            }
 
             // Update list of empty brains and counter
             emptyBrains = BrainsHelper.getBrainsWithoutSpecies(generationMembers);
-            ++counter;
         }
     }
 
     private static void fillGenerationMembersWithOffsprings(){
-        int newGenCounter = 0;
         for(Specie existingSpecie : species){
             // Repeat for the allowed number of offsprings for this specie
             for(int i = 0; i < existingSpecie.offspring; i++){
@@ -161,20 +184,19 @@ public class Main {
                 // Clone the fittest parent
                 // Fitness, adjusted fitness, specieID and nodes will be copied from this brain to the offspring
                 Brain fittestParent = BrainsHelper.getFittestBrain(parents.get(0), parents.get(1));
-                generationMembers.get(newGenCounter).fitness = fittestParent.fitness;
-                generationMembers.get(newGenCounter).adjustedFitness = fittestParent.adjustedFitness;
-                generationMembers.get(newGenCounter).neatParameters.inputNodes = fittestParent.neatParameters.inputNodes;
-                generationMembers.get(newGenCounter).neatParameters.hiddenNodes = fittestParent.neatParameters.hiddenNodes;
-                generationMembers.get(newGenCounter).neatParameters.outputNodes = fittestParent.neatParameters.outputNodes;
-                generationMembers.get(newGenCounter).speciesID = fittestParent.speciesID;
+                generationMembers.get(i).fitness = fittestParent.fitness;
+                generationMembers.get(i).adjustedFitness = fittestParent.adjustedFitness;
+                generationMembers.get(i).neatParameters.inputNodes = fittestParent.neatParameters.inputNodes;
+                generationMembers.get(i).neatParameters.hiddenNodes = fittestParent.neatParameters.hiddenNodes;
+                generationMembers.get(i).neatParameters.outputNodes = fittestParent.neatParameters.outputNodes;
+                generationMembers.get(i).speciesID = fittestParent.speciesID;
 
                 // Get the matching connections of the 2 parents.
                 // connection's weight is randomly picked between the weights of the parents ones.
                 List<Connection> matchingConnections = ConnectionsHelper.getMatchingConnectionsWithRandomlyPickedWeights(parents.get(0), parents.get(1));
-                generationMembers.get(newGenCounter).neatParameters.connections = matchingConnections;
+                generationMembers.get(i).neatParameters.connections = matchingConnections;
 
                 // increment counter
-                ++newGenCounter;
             }
         }
     }
@@ -193,19 +215,19 @@ public class Main {
         }
     }
 
-    private static void DisplayGenerationInformation(){
-        System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
+    private static void DisplayGenerationInformation(int actualGeneration){
+        System.out.println("____________________ GENERATION " + actualGeneration + " ____________________");
         for (Specie specie : species) {
             // Print all the information about the specie
             System.out.println(specie.toString());
         }
     }
 
-    private static void DrawBestBrain(){
+    private static void DrawBestBrain(int actualGeneration){
         if (bestBrain != null) {
-            System.out.println("In generation " + generationsNumber + ", " + "the best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
+            System.out.println("In generation " + actualGeneration + ", " + "the best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
-            System.out.println("__________________________________________________");
+            System.out.println("_______________________________________________________");
             //Show network topology
             bestBrain.drawNetwork();
         }

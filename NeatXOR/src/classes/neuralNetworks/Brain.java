@@ -30,6 +30,7 @@ public class Brain {
         this.speciesID = -1;
         neatParameters.reinitializeParameters();
 
+        // if sentence is used as protection for stupid developer
         if (generationNumber == 1) {
             addNode(1, 1, 0, 0);
             addNode(1, 1, 0, 0);
@@ -41,8 +42,6 @@ public class Brain {
             addConnection(1, outputNodeID, true, false, 1);
             addConnection(2, outputNodeID, true, false, 1);
             addConnection(3, outputNodeID, true, false, 1);
-        } else {
-            //TODO : How to initialize a member of the population of the generation if it's not gen1
         }
     }
 
