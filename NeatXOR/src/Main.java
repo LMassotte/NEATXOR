@@ -1,5 +1,6 @@
 import classes.Brain;
 import classes.NeatParameters;
+import classes.Specie;
 import classes.nodes.Connection;
 
 import java.util.*;
@@ -30,6 +31,7 @@ public class Main {
     public static double bestAdjustedFitnessInPopulation = 0;
     public static Brain bestBrain = null;
     public static List<Brain> generation;
+    public static List<Specie> species;
 
     //used for next generation building (the offsprings are in the order of the species)
     public static List<Integer> offsprings;
@@ -42,6 +44,8 @@ public class Main {
         inputValuesList.add(new double[]{0.0, 1.0, 1.0});
         inputValuesList.add(new double[]{1.0, 0.0, 1.0});
         inputValuesList.add(new double[]{1.0, 1.0, 1.0});
+
+        species = new ArrayList<>();
 
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
@@ -58,6 +62,7 @@ public class Main {
                 for (double[] inputValues : inputValuesList) {
                     brain.loadInputs(inputValues);
                     brain.runNetwork();
+                    // set fitness
                     brain.fitness += brain.getOutput(brain.outputNodeID);
                 }
                 // keep the best brain in a variable
@@ -74,9 +79,12 @@ public class Main {
             computeOffsprings();
             // Now we can adjust the speciation threshold according to the amount of species we have in this generation
             adjustThreshold();
+            // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
+            // For new species : Add a new Specie to the list.
+            updateSpecies();
             System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
-            for(int i = 0; i < offsprings.size(); i++){
-                System.out.println("The next generation will have " + offsprings.get(i) + " members of specie " + (i + 1));
+            for(Specie specie : species){
+                System.out.println(specie.toString());
             }
         }
 
@@ -92,6 +100,33 @@ public class Main {
             System.out.println("Best brain is brain " + bestBrain.brainID + " in the (last) generation " + generationsNumber);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
             bestBrain.drawNetwork();
+        }
+    }
+
+    private static void updateSpecies(){
+        // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
+        // For new species : Add a new Specie to the list.
+        for(int i = 0; i < getDifferentSpeciesCount(); i++){
+            if(!species.isEmpty()){
+                if(species.get(i) != null){
+                    // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
+                    species.get(i).members = getSameSpeciesBrain(i + 1);
+                    species.get(i).offspring = offsprings.get(i);
+                    species.get(i).computeAverageFitness();
+                    double lastAverageAdjustedFitness = species.get(i).averageAdjusetdFitness;
+                    species.get(i).computeAverageFitness();
+                    species.get(i).hasImproved(lastAverageAdjustedFitness);
+                }
+                else{
+                    // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
+                    // TODO :  USE THE FITNESS SUM (0 by default)
+                    species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
+                }
+            }else{
+                // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
+                // TODO :  USE THE FITNESS SUM (0 by default)
+                species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
+            }
         }
     }
 
@@ -244,8 +279,7 @@ public class Main {
 
     public static void setSpeciesIDs() {
         // For the first generation, the leaders of each specie are picked randomly out of the population that hasn't a specieID yet.
-        // From Gen 2 onwards, leaders of species are picked out of the population that has already the specieID !
-
+        // From Gen 2 onwards, leaders of species are picked out of the population that already has the specieID !
         // Gen 1
         if(generationsNumber == 1){
             setSpeciesIDsForBrainsWithoutSpecie();
@@ -255,7 +289,6 @@ public class Main {
             // Get a leader of each existing specie
             // Note to myself : the brains picked will always have a brainID bcs they're taken out of this generation population.
             List<Brain> leadersList = getLeadersList();
-
             // Reset specieID for each non-leader brain
             resetSpecieIDForNonLeaders(leadersList);
             // For each leader, checks which of the specieless brains could join its specie.
@@ -269,7 +302,6 @@ public class Main {
                     }
                 }
             }
-
             // Give a new specie to the brains who couldn't fit in any existing specie
             setSpeciesIDsForBrainsWithoutSpecie();
         }
