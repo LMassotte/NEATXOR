@@ -15,6 +15,7 @@ public class Specie {
     public double averageAdjusetdFitness;
     public double fitnessSum;
     public int gensSinceImproved;
+    public boolean isDead;
 
     public Specie(int id, List<Brain> members, int offspring, double fitnessSum){
         this.specieID = id;
@@ -45,6 +46,7 @@ public class Specie {
         // If a specie hasn't improved in 15 generations, it's killed
         if(gensSinceImproved >= 15){
             this.offspring = 0;
+            this.isDead = true;
         }
     }
 

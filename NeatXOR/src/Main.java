@@ -42,9 +42,6 @@ public class Main {
     public static List<Brain> temporaryGenerationMembers;
     public static List<Specie> species;
 
-    //used for next generation building (the offsprings are in the order of the species)
-    public static List<Integer> offsprings;
-
     public static void main(String[] args) {
 
         //possible values for xor
@@ -55,7 +52,6 @@ public class Main {
         inputValuesList.add(new double[]{1.0, 1.0, 1.0});
 
         species = new ArrayList<>();
-        offsprings = new ArrayList<>();
         bestBrainsFromEachGeneration = new ArrayList<>();
 
         brainIDsCounter = 1;
@@ -73,7 +69,7 @@ public class Main {
                     //increment counter so that each brain has a unique ID.
                     ++brainIDsCounter;
                     brain.initialize(actualGeneration);
-                    // first generation will play with the 4 possible values of XOR, weights are randomized
+                    // first generation's members will play with the 4 possible values of XOR, weights are randomized
                     for (double[] inputValues : inputValuesList) {
                         brain.loadInputs(inputValues);
                         brain.runNetwork();
@@ -86,19 +82,16 @@ public class Main {
             }
             // Work with post gen 1 generations
             else{
+                // Population is already initialized (cfr 3. of last generation)
                 for (int i = 0; i < popSize; i++) {
-                    // This time the population is already initialized.
-                    // It has been done in step 3 of the previous generation.
-                    Brain generationalBrain = generationMembers.get(i);
-                    // each generation will play with the 4 possible values of XOR, weights are randomized
-                    for (int j = 0; j < generationalBrain.neatParameters.inputNodesNumber; j++) {
-                        // run network
-                        generationalBrain.runNetwork();
+                    // each brain will play with the 4 possible values of XOR, weights are randomized
+                    for (int j = 0; j < generationMembers.get(i).neatParameters.inputNodesNumber; j++) {
+                        // run network to update outputs of each node
+                        // what has changed ? connections and their weights
+                        generationMembers.get(i).runNetwork();
                         // set fitness
-                        generationalBrain.fitness += generationalBrain.getOutput(generationalBrain.outputNodeID);
+                        generationMembers.get(i).fitness += generationMembers.get(i).getOutput(generationMembers.get(i).outputNodeID);
                     }
-                    // add brain to the generation's population
-                    generationMembers.set(i, generationalBrain);
                 }
             }
 
@@ -106,24 +99,25 @@ public class Main {
 
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
             SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, c1, c2, c3, speciationThreshold);
+            // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
+            // For new species : Add a new Specie to the list.
+            SpeciesHelper.updateSpecies(species, generationMembers);
             // Divide the fitness by the amount of brains having the speciesID
             ParametersHelper.adjustFitness(generationMembers);
             // Compute the offsprings (amount of members from each specie in the next generation)
-            offsprings = ParametersHelper.computeOffsprings(generationMembers);
+            ParametersHelper.computeOffsprings(generationMembers, species);
             // Adjust offsprings if the total isn't equal to the population size
-            offsprings = ParametersHelper.adjustOffsprings(offsprings, popSize);
+            ParametersHelper.adjustOffsprings(popSize, species);
             // Now we can adjust the speciation threshold according to the amount of species we have in this generation
             speciationThreshold = ParametersHelper.adjustThreshold(generationMembers, speciationThreshold, targetSpeciesAmount, stepSizeForThreshold);
-            // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
-            // For new species : Add a new Specie to the list.
-            SpeciesHelper.updateSpecies(species, generationMembers, offsprings);
             // Display information about the generation that just played
             DisplayGenerationInformation(actualGeneration);
+
             // Update best brain in generation and display it
             bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
             bestBrainsFromEachGeneration.add(bestBrain);
             // Draw best brain and display information about the generation
-//            DrawBestBrain(actualGeneration);
+            DrawBestBrain(actualGeneration);
 
             // 3. CREATE THE NEXT GENERATION
 
@@ -136,13 +130,30 @@ public class Main {
             fillWithOffsprings();
             // Till there, our new generation is fully in generationMembers
             // And the generation that was used just before is in temporaryGenerationMembers.
-            // TODO: Update species !
+            // TODO: Update species ????
+            updateSpeciesMembersList();
+            for(Specie specie : species){
+                System.out.println(specie);
+                System.out.println("_____MEMBERS_____");
+                for(Brain brain : specie.members){
+                    System.out.println("                    " + brain);
+                }
+            }
+
 
             // 4. ELITISM
             if(isElitist){
                 generationMembers.set(0, bestBrain);
             }
 
+        }
+    }
+
+    private static void updateSpeciesMembersList(){
+        for(Specie existingSpecie : species){
+            List<Brain> speciesBrain = BrainsHelper.getSameSpeciesBrain(existingSpecie.specieID, generationMembers);
+            existingSpecie.members = new ArrayList<>();
+            existingSpecie.members.addAll(speciesBrain);
         }
     }
 
@@ -173,6 +184,10 @@ public class Main {
                 // Since I know how many brains I added yet, I can increment this value by one.
                 offspring.brainID = addedToNextGenCounter + 1;
 
+                // Reinitialize parameters that will be updated when it plays
+                offspring.fitness = 0.0;
+                offspring.adjustedFitness = 0.0;
+
                 // Now the offspring should have everything it needs.
                 // TODO: MUTATION
                 // Add the offspring to the next generation population
@@ -182,6 +197,9 @@ public class Main {
                 addedToNextGenCounter++;
             }
         }
+//        for(Brain brain : generationMembers){
+//            System.out.println(brain);
+//        }
     }
 
     private static void resetGenerationMembers(){

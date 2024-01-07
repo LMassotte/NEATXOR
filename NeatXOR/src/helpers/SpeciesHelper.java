@@ -42,7 +42,7 @@ public class SpeciesHelper {
         }
     }
 
-    public static void updateSpecies(List<Specie> species, List<Brain> generationMembers, List<Integer> offsprings){
+    public static void updateSpecies(List<Specie> species, List<Brain> generationMembers){
         // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
         // For new species : Add a new Specie to the list.
         for(int i = 0; i < getDifferentSpeciesCount(generationMembers); i++){
@@ -51,7 +51,7 @@ public class SpeciesHelper {
                 if(species.get(i) != null){
                     // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
                     species.get(i).members = BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers);
-                    species.get(i).offspring = offsprings.get(i);
+                    species.get(i).offspring = 0;
                     species.get(i).computeAverageFitness();
                     double lastAverageAdjustedFitness = species.get(i).averageAdjusetdFitness;
                     species.get(i).computeAverageFitness();
@@ -59,15 +59,17 @@ public class SpeciesHelper {
                 }
                 else{
                     // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
+                    // Offspring will be updated in the next step
                     // TODO :  USE THE FITNESS SUM (0 by default)
-                    species.add(new Specie(i + 1, BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers), offsprings.get(i), 0));
+                    species.add(new Specie(i + 1, BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers), 0, 0));
                 }
             }
             // Else, create it
             else{
                 // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
+                // Offspring will be updated in the next step
                 // TODO :  USE THE FITNESS SUM (0 by default)
-                species.add(new Specie(i + 1, BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers), offsprings.get(i), 0));
+                species.add(new Specie(i + 1, BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers), 0, 0));
             }
         }
     }

@@ -1,6 +1,7 @@
 package helpers;
 
 import classes.neuralNetworks.Brain;
+import classes.neuralNetworks.Specie;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ public class ParametersHelper {
         return (sum / sameSpecieAmount);
     }
 
-    public static List<Integer> computeOffsprings(List<Brain> generationMembers){
+    public static void computeOffsprings(List<Brain> generationMembers, List<Specie> species){
         List<Integer> offsprings = new ArrayList<>();
 
         //global average adjusted fitness
@@ -38,10 +39,10 @@ public class ParametersHelper {
         for(int i = 1; i <= differentSpeciesCounter; i++){
             List<Brain> specieMembers = BrainsHelper.getSameSpeciesBrain(i, generationMembers);
             double specieMean = getAverageAdjustedFitnessBySpecie(i, generationMembers);
-
-            offsprings.add((int)(specieMean / globalMean * specieMembers.size()));
+            // Update the offspring value of the specie
+            int finalI = i;
+            species.stream().filter(specie -> specie.specieID == finalI).toList().get(0).offspring = (int)(specieMean / globalMean * specieMembers.size());
         }
-        return offsprings;
     }
 
     public static double adjustThreshold(List<Brain> generationMembers, double speciationThreshold, int targetSpeciesAmount, double stepSizeForThreshold){
@@ -57,21 +58,22 @@ public class ParametersHelper {
         }
     }
 
-    public static List<Integer> adjustOffsprings(List<Integer> offsprings, int popSize){
-        int total = ParametersHelper.getTotal(offsprings);
-        while(total < popSize){
-            offsprings.set(0, offsprings.get(0) + 1);
-            total = ParametersHelper.getTotal(offsprings);
+    public static void adjustOffsprings(int popSize, List<Specie> species){
+        int total = 0;
+        for(Specie specie : species){
+            total += specie.offspring;
         }
-
-        return offsprings;
+        while(total < popSize){
+            species.get(0).offspring += 1;
+            total = ParametersHelper.getTotal(species);
+        }
     }
 
-    public static int getTotal(List<Integer> offsprings){
-        int sum = 0;
-        for(Integer offspring : offsprings){
-            sum += offspring;
+    public static int getTotal(List<Specie> species){
+        int total = 0;
+        for(Specie specie : species){
+            total += specie.offspring;
         }
-        return sum;
+        return total;
     }
 }
