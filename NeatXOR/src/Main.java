@@ -1,7 +1,6 @@
 import classes.neuralNetworks.Brain;
 import classes.NeatParameters;
 import classes.neuralNetworks.Specie;
-import classes.nodes.Connection;
 import helpers.BrainsHelper;
 import helpers.ConnectionsHelper;
 import helpers.ParametersHelper;
@@ -11,8 +10,8 @@ import java.util.*;
 
 public class Main {
     // general parameters
-    public static boolean isElitist = true;
-    public static int generationsNumber = 3;
+    public static boolean isElitist = false;
+    public static int generationsNumber = 1;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
     public static int inputNodesNumber = 3;
@@ -59,9 +58,9 @@ public class Main {
         offsprings = new ArrayList<>();
         bestBrainsFromEachGeneration = new ArrayList<>();
 
+        brainIDsCounter = 1;
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
-            brainIDsCounter = 1;
             // 1. GENERATION PLAYS
 
             // Initialize first generation if needed
@@ -85,13 +84,13 @@ public class Main {
                     generationMembers.add(brain);
                 }
             }
+            // Work with post gen 1 generations
             else{
                 for (int i = 0; i < popSize; i++) {
                     // This time the population is already initialized.
                     // It has been done in step 3 of the previous generation.
                     Brain generationalBrain = generationMembers.get(i);
                     // each generation will play with the 4 possible values of XOR, weights are randomized
-                    // TODO : Will mutation have the possibility to add an input node ? I don't think so but can be
                     for (int j = 0; j < generationalBrain.neatParameters.inputNodesNumber; j++) {
                         // run network
                         generationalBrain.runNetwork();
@@ -111,6 +110,8 @@ public class Main {
             ParametersHelper.adjustFitness(generationMembers);
             // Compute the offsprings (amount of members from each specie in the next generation)
             offsprings = ParametersHelper.computeOffsprings(generationMembers);
+            // Adjust offsprings if the total isn't equal to the population size
+            offsprings = ParametersHelper.adjustOffsprings(offsprings, popSize);
             // Now we can adjust the speciation threshold according to the amount of species we have in this generation
             speciationThreshold = ParametersHelper.adjustThreshold(generationMembers, speciationThreshold, targetSpeciesAmount, stepSizeForThreshold);
             // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
@@ -122,20 +123,22 @@ public class Main {
             bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
             bestBrainsFromEachGeneration.add(bestBrain);
             // Draw best brain and display information about the generation
-            DrawBestBrain(actualGeneration);
+//            DrawBestBrain(actualGeneration);
 
             // 3. CREATE THE NEXT GENERATION
 
             // Reset generation members and keep them in a temporary variable
             resetGenerationMembers();
-            // For each existing specie, add offsprings to the next generation
-            fillGenerationMembersWithOffsprings();
-            // Look if generation is complete
-            // Otherwise, fill it with the best creatures from a specie
-            fillGenerationPopulation();
-            //
+            // GENERATION MEMBERS HAS BEEN RESET CAREFUL LOIC
+            // Fill the generation with offsprings
+            // Each specie has an offspring number => there will be x members of that specie
+            // Total is always popSize
+            fillWithOffsprings();
+            // Till there, our new generation is fully in generationMembers
+            // And the generation that was used just before is in temporaryGenerationMembers.
+            // TODO: Update species !
 
-            // 4. ELITISME
+            // 4. ELITISM
             if(isElitist){
                 generationMembers.set(0, bestBrain);
             }
@@ -143,60 +146,40 @@ public class Main {
         }
     }
 
-    private static void fillGenerationPopulation(){
-        // Because of the rounded numbers management of Java
-        // I sometimes don't have enough brains in my population
-        // Fill with random brains from the last generation
-        List<Brain> emptyBrains = BrainsHelper.getBrainsWithoutSpecies(generationMembers);
-        // counter will be used to find the index of the brains to replace
-        int counter = popSize - emptyBrains.size();
+    private static void fillWithOffsprings(){
+        // this value counts how many brains have been added to next gen.
+        int addedToNextGenCounter = 0;
 
-        // While there are specieless brains
-        while(!emptyBrains.isEmpty()){
-            Random rand = new Random();
-            int randomSpecieID = 0;
-            // Pick a valid specieID
-            while(randomSpecieID == 0){
-                randomSpecieID = rand.nextInt(SpeciesHelper.getDifferentSpeciesCount(temporaryGenerationMembers));
-            }
-            // Get the fittest brain of the specie
-            List<Brain> specieBrains = BrainsHelper.getSameSpeciesBrain(randomSpecieID, temporaryGenerationMembers);
-            // Add it to the generation
-            if(specieBrains.size() > 0){
-                Brain brainToAdd = BrainsHelper.getFittestInList(specieBrains);
-                generationMembers.set(counter, brainToAdd);
-                ++counter;
-            }
+        // Loop on every existing species
+        for(Specie existingSpecie: species){
 
-            // Update list of empty brains and counter
-            emptyBrains = BrainsHelper.getBrainsWithoutSpecies(generationMembers);
-        }
-    }
+            // select parents
+            List<Brain> parents = existingSpecie.selectParentsForNextGen(tournamentSize, existingSpecie.members);
 
-    private static void fillGenerationMembersWithOffsprings(){
-        for(Specie existingSpecie : species){
-            // Repeat for the allowed number of offsprings for this specie
-            for(int i = 0; i < existingSpecie.offspring; i++){
-                // Select parents for this specie
-                // Note : tournament winners can be the same brain multiple times => parents might have the same brainID !
-                List<Brain> parents = existingSpecie.selectParentsForNextGen(tournamentSize, existingSpecie.members);
+            // create offsprings and add them to the generation
+            for(int i =0; i < existingSpecie.offspring; i++){
+                //create a new empty Brain
+                NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
+                Brain offspring = new Brain(neatParameters, brainIDsCounter);
 
-                // Clone the fittest parent
-                // Fitness, adjusted fitness, specieID and nodes will be copied from this brain to the offspring
-                Brain fittestParent = BrainsHelper.getFittestBrain(parents.get(0), parents.get(1));
-                generationMembers.get(i).fitness = fittestParent.fitness;
-                generationMembers.get(i).adjustedFitness = fittestParent.adjustedFitness;
-                generationMembers.get(i).neatParameters.inputNodes = fittestParent.neatParameters.inputNodes;
-                generationMembers.get(i).neatParameters.hiddenNodes = fittestParent.neatParameters.hiddenNodes;
-                generationMembers.get(i).neatParameters.outputNodes = fittestParent.neatParameters.outputNodes;
-                generationMembers.get(i).speciesID = fittestParent.speciesID;
+                // Clone everything from the fittest parent
+                offspring.copyFrom(BrainsHelper.getFittestBrain(parents.get(0), parents.get(1)));
 
-                // Get the matching connections of the 2 parents.
-                // connection's weight is randomly picked between the weights of the parents ones.
-                List<Connection> matchingConnections = ConnectionsHelper.getMatchingConnectionsWithRandomlyPickedWeights(parents.get(0), parents.get(1));
-                generationMembers.get(i).neatParameters.connections = matchingConnections;
+                // Till now, the offspring is exactly the same as its fittest parent
+                // We will now cross the connections.
+                offspring.neatParameters.connections = ConnectionsHelper.getMatchingConnectionsWithRandomlyPickedWeights(parents.get(0), parents.get(1));
 
-                // increment counter
+                // Finally, get a new id for the offspring
+                // Since I know how many brains I added yet, I can increment this value by one.
+                offspring.brainID = addedToNextGenCounter + 1;
+
+                // Now the offspring should have everything it needs.
+                // TODO: MUTATION
+                // Add the offspring to the next generation population
+                generationMembers.add(offspring);
+
+                // And increment counter
+                addedToNextGenCounter++;
             }
         }
     }
@@ -204,15 +187,6 @@ public class Main {
     private static void resetGenerationMembers(){
         temporaryGenerationMembers = generationMembers;
         generationMembers = new ArrayList<>();
-        brainIDsCounter = 1;
-
-        // Add popSize brand-new brains to generationMembers List
-        for(int i = 0; i < popSize; i++){
-            NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
-            Brain brain = new Brain(neatParameters, brainIDsCounter);
-            brain.initializeWithEmptyNodeAndConnectionLists();
-            generationMembers.add(brain);
-        }
     }
 
     private static void DisplayGenerationInformation(int actualGeneration){

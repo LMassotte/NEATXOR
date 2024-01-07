@@ -56,4 +56,22 @@ public class ParametersHelper {
             brain.adjustedFitness = brain.fitness / sameSpecieAmount;
         }
     }
+
+    public static List<Integer> adjustOffsprings(List<Integer> offsprings, int popSize){
+        int total = ParametersHelper.getTotal(offsprings);
+        while(total < popSize){
+            offsprings.set(0, offsprings.get(0) + 1);
+            total = ParametersHelper.getTotal(offsprings);
+        }
+
+        return offsprings;
+    }
+
+    public static int getTotal(List<Integer> offsprings){
+        int sum = 0;
+        for(Integer offspring : offsprings){
+            sum += offspring;
+        }
+        return sum;
+    }
 }

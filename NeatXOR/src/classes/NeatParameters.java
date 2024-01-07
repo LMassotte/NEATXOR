@@ -46,4 +46,9 @@ public class NeatParameters {
         this.nodeIDsCounter = 1;
         this.innovationIDsCounter = 5;
     }
+
+    @Override
+    public String toString() {
+        return "I have " + inputNodes.size() + " input nodes, " + hiddenNodes.size() + " hidden nodes and " + outputNodes.size() + " output nodes.";
+    }
 }

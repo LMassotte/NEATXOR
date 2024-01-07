@@ -22,6 +22,7 @@ public class SpeciesHelper {
         else{
             // Get a leader of each existing specie
             // Note to myself : the brains picked will always have a brainID bcs they're taken out of this generation population.
+
             List<Brain> leadersList = getLeadersList(generationMembers);
             // Reset specieID for each non-leader brain
             resetSpecieIDForNonLeaders(leadersList, generationMembers);
@@ -88,9 +89,13 @@ public class SpeciesHelper {
     public static List<Brain> getLeadersList(List<Brain> generationMembers){
         // Return a leader of each existing specie in the generation.
         List<Brain> leadersList = new ArrayList<>();
-        for(int i = 1; i <= SpeciesHelper.getDifferentSpeciesCount(generationMembers); i++){
+        int speciesCounter = SpeciesHelper.getDifferentSpeciesCount(generationMembers);
+        for(int i = 1; i <= speciesCounter; i++){
             List<Brain> brainsOfSameSpecie = BrainsHelper.getSameSpeciesBrain(i, generationMembers);
             leadersList.add(BrainsHelper.selectRandomBrain(brainsOfSameSpecie));
+//            if (!brainsOfSameSpecie.isEmpty()) {
+//                leadersList.add(BrainsHelper.selectRandomBrain(brainsOfSameSpecie));
+//            }
         }
         return leadersList;
     }

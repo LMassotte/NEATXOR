@@ -30,26 +30,18 @@ public class Brain {
         this.speciesID = -1;
         neatParameters.reinitializeParameters();
 
-        // if sentence is used as protection for stupid developer
+        addNode(1, 1, 0, 0);
+        addNode(1, 1, 0, 0);
+        addNode(3, 1, 0, 0);
+        addNode(2, 3, 0, 0);
+
+        outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
+
         if (generationNumber == 1) {
-            addNode(1, 1, 0, 0);
-            addNode(1, 1, 0, 0);
-            addNode(3, 1, 0, 0);
-            addNode(2, 3, 0, 0);
-
-            outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
-
             addConnection(1, outputNodeID, true, false, 1);
             addConnection(2, outputNodeID, true, false, 1);
             addConnection(3, outputNodeID, true, false, 1);
         }
-    }
-
-    public void initializeWithEmptyNodeAndConnectionLists(){
-        this.fitness = 0;
-        this.adjustedFitness = 0;
-        this.speciesID = -1;
-        neatParameters.reinitializeParameters();
     }
 
     //always add a node through this to ensure that ids are different
@@ -248,4 +240,10 @@ public class Brain {
         this.neatParameters.innovationIDsCounter = other.neatParameters.innovationIDsCounter;
     }
 
+    @Override
+    public String toString() {
+        return "Brain " + this.brainID + " of specie " + this.speciesID + " has " + this.neatParameters.inputNodes.size() + " inputs, "
+                + this.neatParameters.hiddenNodesNumber + " hidden nodes and " + this.neatParameters.outputNodes.size() + " outputs."
+                + "It has " + this.neatParameters.connections.size() + " connections.";
+    }
 }
