@@ -40,6 +40,62 @@ public class ConnectionsHelper {
         return Math.max(brainLeader.neatParameters.connections.size(), brainCompared.neatParameters.connections.size());
     }
 
+    public static List<Connection> getMatchingConnectionsWithRandomlyPickedWeights(Brain brain1, Brain brain2){
+        // Get all the matching connections
+        // Weight is the only difference between the 2 lists
+        // Pick randomly the weight between brain1 and brain2
+
+        List<Connection> matchingConnectionsRandomWeights = new ArrayList<>();
+        List<Connection> matchingConnectionsBrain1Weights = getMatchingConnectionsWithBrain1Weights(brain1, brain2);
+        List<Connection> matchingConnectionsBrain2Weights = getMatchingConnectionsWithBrain2Weights(brain1, brain2);
+        int index = 0;
+        for(Connection connection : matchingConnectionsBrain1Weights){
+            Random random = new Random();
+            int randomInteger = random.nextInt(2);
+            if(randomInteger == 0){
+                matchingConnectionsRandomWeights.add(connection);
+            }
+            else{
+                matchingConnectionsRandomWeights.add(matchingConnectionsBrain2Weights.get(index));
+            }
+            ++index;
+        }
+
+        return matchingConnectionsRandomWeights;
+    }
+
+    private static List<Connection> getMatchingConnectionsWithBrain1Weights(Brain brain1, Brain brain2){
+        List<Connection> matchingConnections = new ArrayList<>();
+        List<Connection> brain1Connections = brain1.neatParameters.connections;
+        List<Connection> brain2Connections = brain2.neatParameters.connections;
+
+        Set<Integer> innovationIDSetBrain2 = ConnectionsHelper.getInnovationIDSet(brain2Connections);
+
+        for (Connection connection : brain1Connections) {
+            if (innovationIDSetBrain2.contains(connection.innovationID)) {
+                matchingConnections.add(connection);
+            }
+        }
+
+        return matchingConnections;
+    }
+
+    private static List<Connection> getMatchingConnectionsWithBrain2Weights(Brain brain1, Brain brain2){
+        List<Connection> matchingConnections = new ArrayList<>();
+        List<Connection> brain1Connections = brain1.neatParameters.connections;
+        List<Connection> brain2Connections = brain2.neatParameters.connections;
+
+        Set<Integer> innovationIDSetBrain1 = ConnectionsHelper.getInnovationIDSet(brain1Connections);
+
+        for (Connection connection : brain2Connections) {
+            if (innovationIDSetBrain1.contains(connection.innovationID)) {
+                matchingConnections.add(connection);
+            }
+        }
+
+        return matchingConnections;
+    }
+
     public static double getWeightDifference(Brain brainLeader, Brain brainCompared) {
         double meanWeightDifference;
         List<Connection> leaderConnections = brainLeader.neatParameters.connections;

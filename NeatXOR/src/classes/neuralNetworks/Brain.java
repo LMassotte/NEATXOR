@@ -30,7 +30,7 @@ public class Brain {
         this.speciesID = -1;
         neatParameters.reinitializeParameters();
 
-        if(generationNumber == 1){
+        if (generationNumber == 1) {
             addNode(1, 1, 0, 0);
             addNode(1, 1, 0, 0);
             addNode(3, 1, 0, 0);
@@ -41,10 +41,16 @@ public class Brain {
             addConnection(1, outputNodeID, true, false, 1);
             addConnection(2, outputNodeID, true, false, 1);
             addConnection(3, outputNodeID, true, false, 1);
-        }
-        else{
+        } else {
             //TODO : How to initialize a member of the population of the generation if it's not gen1
         }
+    }
+
+    public void initializeWithEmptyNodeAndConnectionLists(){
+        this.fitness = 0;
+        this.adjustedFitness = 0;
+        this.speciesID = -1;
+        neatParameters.reinitializeParameters();
     }
 
     //always add a node through this to ensure that ids are different
@@ -82,7 +88,7 @@ public class Brain {
     //always add a connection through this to ensure that innovation ids are different
     public void addConnection(int inNodeID, int outNodeID, boolean isEnabled, boolean isRecurrent, int generationNumber) {
         double weight = 0;
-        if(generationNumber == 1){
+        if (generationNumber == 1) {
             Random random = new Random();
             weight = random.nextDouble() * 2 - 1;
         }
@@ -196,7 +202,7 @@ public class Brain {
         }
     }
 
-    public double getOutput(int nodeID){
+    public double getOutput(int nodeID) {
         return findNodeById(nodeID) != null ? findNodeById(nodeID).sumOutput : -1;
     }
 

@@ -41,7 +41,7 @@ public class SpeciesHelper {
         }
     }
 
-    public static List<Specie> updateSpecies(List<Specie> species, List<Brain> generationMembers, List<Integer> offsprings){
+    public static void updateSpecies(List<Specie> species, List<Brain> generationMembers, List<Integer> offsprings){
         // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
         // For new species : Add a new Specie to the list.
         for(int i = 0; i < getDifferentSpeciesCount(generationMembers); i++){
@@ -69,7 +69,6 @@ public class SpeciesHelper {
                 species.add(new Specie(i + 1, BrainsHelper.getSameSpeciesBrain(i + 1, generationMembers), offsprings.get(i), 0));
             }
         }
-        return species;
     }
 
     public static int getDifferentSpeciesCount(List<Brain> generationMembers){
@@ -100,8 +99,9 @@ public class SpeciesHelper {
         for(Brain generationalBrain : generationMembers){
             boolean isLeader = false;
             for(Brain leaderBrain : leadersList){
-                if(generationalBrain.brainID == leaderBrain.brainID){
+                if (generationalBrain.brainID == leaderBrain.brainID) {
                     isLeader = true;
+                    break;
                 }
             }
 

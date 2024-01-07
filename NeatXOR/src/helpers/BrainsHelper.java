@@ -31,4 +31,16 @@ public class BrainsHelper {
         }
         return bestBrain;
     }
+
+    public static Brain getFittestBrain(Brain brain1, Brain brain2){
+        return brain1.adjustedFitness >= brain2.adjustedFitness ? brain1 : brain2;
+    }
+
+    public static Brain getFittestInList(List<Brain> brains){
+        Brain fittestBrain = brains.get(0);
+        for(Brain brain : brains){
+            fittestBrain = brain.fitness > fittestBrain.fitness ? brain : fittestBrain;
+        }
+        return fittestBrain;
+    }
 }

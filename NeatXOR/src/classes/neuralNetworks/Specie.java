@@ -1,5 +1,10 @@
 package classes.neuralNetworks;
 
+import helpers.BrainsHelper;
+import helpers.SpeciesHelper;
+import helpers.TournamentManager;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class Specie {
@@ -55,5 +60,15 @@ public class Specie {
                 + this.averageAdjusetdFitness +". \n It hasn't evolved since "
                 + this.gensSinceImproved + " generations. \n"
                 + " The next generation will have " + this.offspring + " members of this specie. \n";
+    }
+
+    public List<Brain> selectParentsForNextGen(int tournamentSize, List<Brain> specieMembers){
+        // Select 2 parents across this specie population.
+        // Using tournament selection which will keep the best brains out of tournament contestants.
+        // Contestants are selected randomly across the specie population.
+        // "Best" means "has the best adjusted fitness".
+        List<Brain> parents = TournamentManager.performTournamentSelection(tournamentSize, 2, specieMembers);
+
+        return parents;
     }
 }
