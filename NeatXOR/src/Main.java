@@ -25,12 +25,12 @@ public class Main {
     // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
     // Ken uses a step size of 0.3.
     public static double stepSizeForThreshold = 0.01;
-    public static double speciationThreshold = 1.0;
+    public static double speciationThreshold = 0.1;
 
     //used to keep data through generations
     public static double bestAdjustedFitnessInPopulation = 0;
     public static Brain bestBrain = null;
-    public static List<Brain> generation;
+    public static List<Brain> generationMembers;
     public static List<Specie> species;
 
     //used for next generation building (the offsprings are in the order of the species)
@@ -49,7 +49,7 @@ public class Main {
 
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
-            generation = new ArrayList<>();
+            generationMembers = new ArrayList<>();
             // make a generation play
             for (int i = 0; i < popSize; i++) {
                 //build neatParameters and Brain
@@ -68,7 +68,7 @@ public class Main {
                 // keep the best brain in a variable
 
 
-                generation.add(brain);
+                generationMembers.add(brain);
             }
             // build the next generation
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
@@ -87,9 +87,16 @@ public class Main {
                 System.out.println(specie.toString());
             }
         }
+        // Update best brain in generation and display it
+        updateAndDisplayBestBrain();
+        //Show network topology
+        bestBrain.drawNetwork();
 
+    }
+
+    private static void updateAndDisplayBestBrain(){
         // find and display best brain in generation
-        for (Brain generationBrain : generation) {
+        for (Brain generationBrain : generationMembers) {
             if (generationBrain.adjustedFitness > bestAdjustedFitnessInPopulation) {
                 bestBrain = new Brain(generationBrain.neatParameters, -1);
                 bestBrain.copyFrom(generationBrain);
@@ -97,17 +104,22 @@ public class Main {
             }
         }
         if (bestBrain != null) {
-            System.out.println("Best brain is brain " + bestBrain.brainID + " in the (last) generation " + generationsNumber);
+            System.out.println("In generation " + generationsNumber + ", " + "th best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
-            bestBrain.drawNetwork();
+            System.out.println("__________________________________________________");
         }
+    }
+
+    private static List<Specie> getSpeciesWithID(int specieID){
+        return species.stream().filter(specie -> specie.specieID == specieID).toList();
     }
 
     private static void updateSpecies(){
         // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
         // For new species : Add a new Specie to the list.
         for(int i = 0; i < getDifferentSpeciesCount(); i++){
-            if(!species.isEmpty()){
+            // If a specie with ID = "i + 1" is found, update it
+            if(!getSpeciesWithID(i + 1).isEmpty()){
                 if(species.get(i) != null){
                     // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
                     species.get(i).members = getSameSpeciesBrain(i + 1);
@@ -122,7 +134,9 @@ public class Main {
                     // TODO :  USE THE FITNESS SUM (0 by default)
                     species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
                 }
-            }else{
+            }
+            // Else, create it
+            else{
                 // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
                 // TODO :  USE THE FITNESS SUM (0 by default)
                 species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
@@ -294,11 +308,11 @@ public class Main {
             // For each leader, checks which of the specieless brains could join its specie.
             // Compute the compatibility difference and if it's below threshold, assign leader's specie ID.
             for(Brain leaderBrain : leadersList){
-                List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generation);
+                List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
                 for (Brain brain : brainsWithoutSpecies) {
                     double cd = getCompatibilityDifference(leaderBrain, brain);
                     if (cd < speciationThreshold) {
-                        generation.get(brain.brainID - 1).speciesID = leaderBrain.brainID;
+                        generationMembers.get(brain.brainID - 1).speciesID = leaderBrain.brainID;
                     }
                 }
             }
@@ -317,7 +331,7 @@ public class Main {
         return leadersList;
     }
     public static void resetSpecieIDForNonLeaders(List<Brain> leadersList){
-        for(Brain generationalBrain : generation){
+        for(Brain generationalBrain : generationMembers){
             boolean isLeader = false;
             for(Brain leaderBrain : leadersList){
                 if(generationalBrain.brainID == leaderBrain.brainID){
@@ -332,7 +346,7 @@ public class Main {
     }
 
     public static void setSpeciesIDsForBrainsWithoutSpecie(){
-        List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generation);
+        List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
         // species counter is used to assign new species IDs. For gen 1, it will be one.
         // After gen 1, it counts how many species already exist and increments that number by one.
         int speciesCount = getDifferentSpeciesCount() + 1;
@@ -346,12 +360,12 @@ public class Main {
             for (Brain brain : brainsWithoutSpecies) {
                 double cd = getCompatibilityDifference(brainLeader, brain);
                 if (cd < speciationThreshold) {
-                    generation.get(brain.brainID - 1).speciesID = speciesCount;
+                    generationMembers.get(brain.brainID - 1).speciesID = speciesCount;
                 }
             }
 
             // Update the list of brains without speciesID
-            brainsWithoutSpecies = getBrainsWithoutSpecies(generation);
+            brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
             ++speciesCount;
         }
     }
@@ -367,19 +381,19 @@ public class Main {
     }
 
     private static void adjustFitness(){
-        for (Brain brain : generation){
+        for (Brain brain : generationMembers){
             List<Brain> sameSpecieBrains = getSameSpeciesBrain(brain.speciesID);
             long sameSpecieAmount = sameSpecieBrains.size();
             brain.adjustedFitness = brain.fitness / sameSpecieAmount;
         }
     }
     private static List<Brain> getSameSpeciesBrain(int specieID){
-        return generation.stream().filter(brain -> brain.speciesID == specieID).toList();
+        return generationMembers.stream().filter(brain -> brain.speciesID == specieID).toList();
     }
 
     private static int getDifferentSpeciesCount(){
         int highestSpecieID = 0;
-        for(Brain brain : generation){
+        for(Brain brain : generationMembers){
             if(brain.speciesID > highestSpecieID){
                 highestSpecieID = brain.speciesID;
             }
@@ -391,11 +405,11 @@ public class Main {
 
     private static double getGlobalAverageAdjustedFitness(){
         double sum = 0;
-        for(Brain brain : generation){
+        for(Brain brain : generationMembers){
             sum += brain.adjustedFitness;
         }
 
-        return (sum / generation.size());
+        return (sum / generationMembers.size());
     }
 
     private static double getAverageAdjustedFitnessBySpecie(int specieID){

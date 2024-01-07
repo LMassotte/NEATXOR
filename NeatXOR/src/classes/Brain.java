@@ -42,7 +42,7 @@ public class Brain {
             addConnection(3, outputNodeID, true, false, 1);
         }
         else{
-
+            //TODO : How to initialize a member of the population of the generation if it's not gen1
         }
     }
 
