@@ -1,5 +1,6 @@
-package classes;
+package classes.neuralNetworks;
 
+import classes.NeatParameters;
 import classes.canvas.NeuralNetworkCanvas;
 import classes.nodes.Connection;
 import classes.nodes.Node;

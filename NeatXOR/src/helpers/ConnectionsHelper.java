@@ -1,6 +1,6 @@
 package helpers;
 
-import classes.Brain;
+import classes.neuralNetworks.Brain;
 import classes.nodes.Connection;
 
 import java.util.*;

@@ -1,8 +1,7 @@
-import classes.Brain;
+import classes.neuralNetworks.Brain;
 import classes.NeatParameters;
-import classes.Specie;
-import classes.nodes.Connection;
-import helpers.ConnectionsHelper;
+import classes.neuralNetworks.Specie;
+import helpers.BrainsHelper;
 import helpers.ParametersHelper;
 import helpers.SpeciesHelper;
 
@@ -33,6 +32,7 @@ public class Main {
     //used to keep data through generations
     public static double bestAdjustedFitnessInPopulation = 0;
     public static Brain bestBrain = null;
+    public static List<Brain> bestBrainsFromEachGeneration;
     public static List<Brain> generationMembers;
     public static List<Specie> species;
 
@@ -50,6 +50,7 @@ public class Main {
 
         species = new ArrayList<>();
         offsprings = new ArrayList<>();
+        bestBrainsFromEachGeneration = new ArrayList<>();
 
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
@@ -69,9 +70,7 @@ public class Main {
                     // set fitness
                     brain.fitness += brain.getOutput(brain.outputNodeID);
                 }
-                // keep the best brain in a variable
-
-
+                // add brain to the generation's population
                 generationMembers.add(brain);
             }
             // build the next generation
@@ -86,31 +85,31 @@ public class Main {
             // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
             // For new species : Add a new Specie to the list.
             SpeciesHelper.updateSpecies(species, generationMembers, offsprings);
-            System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
-            for (Specie specie : species) {
-                System.out.println(specie.toString());
-            }
+            // Display information about the generation that just played
+            DisplayGenerationInformation();
+            // Update best brain in generation and display it
+            bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
+            bestBrainsFromEachGeneration.add(bestBrain);
+            // Draw best brain and display information about the generation
+            DrawBestBrain();
         }
-        // Update best brain in generation and display it
-        updateAndDisplayBestBrain();
-        //Show network topology
-        bestBrain.drawNetwork();
-
     }
 
-    private static void updateAndDisplayBestBrain() {
-        // find and display best brain in generation
-        for (Brain generationBrain : generationMembers) {
-            if (generationBrain.adjustedFitness > bestAdjustedFitnessInPopulation) {
-                bestBrain = new Brain(generationBrain.neatParameters, -1);
-                bestBrain.copyFrom(generationBrain);
-                bestAdjustedFitnessInPopulation = generationBrain.adjustedFitness;
-            }
+    private static void DisplayGenerationInformation(){
+        System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
+        for (Specie specie : species) {
+            // Print all the information about the specie
+            System.out.println(specie.toString());
         }
+    }
+
+    private static void DrawBestBrain(){
         if (bestBrain != null) {
-            System.out.println("In generation " + generationsNumber + ", " + "th best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
+            System.out.println("In generation " + generationsNumber + ", " + "the best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
             System.out.println("__________________________________________________");
+            //Show network topology
+            bestBrain.drawNetwork();
         }
     }
 }

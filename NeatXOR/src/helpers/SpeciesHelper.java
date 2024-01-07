@@ -1,7 +1,7 @@
 package helpers;
 
-import classes.Brain;
-import classes.Specie;
+import classes.neuralNetworks.Brain;
+import classes.neuralNetworks.Specie;
 
 import java.util.ArrayList;
 import java.util.List;
