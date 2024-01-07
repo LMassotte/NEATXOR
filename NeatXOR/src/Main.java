@@ -2,6 +2,9 @@ import classes.Brain;
 import classes.NeatParameters;
 import classes.Specie;
 import classes.nodes.Connection;
+import helpers.ConnectionsHelper;
+import helpers.ParametersHelper;
+import helpers.SpeciesHelper;
 
 import java.util.*;
 
@@ -46,6 +49,7 @@ public class Main {
         inputValuesList.add(new double[]{1.0, 1.0, 1.0});
 
         species = new ArrayList<>();
+        offsprings = new ArrayList<>();
 
         //for each generation
         for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
@@ -72,18 +76,18 @@ public class Main {
             }
             // build the next generation
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
-            setSpeciesIDs();
+            SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, c1, c2, c3, speciationThreshold);
             // Divide the fitness by the amount of brains having the speciesID
-            adjustFitness();
+            ParametersHelper.adjustFitness(generationMembers);
             // Compute the offsprings (amount of members from each specie in the next generation)
-            computeOffsprings();
+            offsprings = ParametersHelper.computeOffsprings(generationMembers);
             // Now we can adjust the speciation threshold according to the amount of species we have in this generation
-            adjustThreshold();
+            speciationThreshold = ParametersHelper.adjustThreshold(generationMembers, speciationThreshold, targetSpeciesAmount, stepSizeForThreshold);
             // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
             // For new species : Add a new Specie to the list.
-            updateSpecies();
+            SpeciesHelper.updateSpecies(species, generationMembers, offsprings);
             System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
-            for(Specie specie : species){
+            for (Specie specie : species) {
                 System.out.println(specie.toString());
             }
         }
@@ -94,7 +98,7 @@ public class Main {
 
     }
 
-    private static void updateAndDisplayBestBrain(){
+    private static void updateAndDisplayBestBrain() {
         // find and display best brain in generation
         for (Brain generationBrain : generationMembers) {
             if (generationBrain.adjustedFitness > bestAdjustedFitnessInPopulation) {
@@ -108,340 +112,5 @@ public class Main {
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
             System.out.println("__________________________________________________");
         }
-    }
-
-    private static List<Specie> getSpeciesWithID(int specieID){
-        return species.stream().filter(specie -> specie.specieID == specieID).toList();
-    }
-
-    private static void updateSpecies(){
-        // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
-        // For new species : Add a new Specie to the list.
-        for(int i = 0; i < getDifferentSpeciesCount(); i++){
-            // If a specie with ID = "i + 1" is found, update it
-            if(!getSpeciesWithID(i + 1).isEmpty()){
-                if(species.get(i) != null){
-                    // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
-                    species.get(i).members = getSameSpeciesBrain(i + 1);
-                    species.get(i).offspring = offsprings.get(i);
-                    species.get(i).computeAverageFitness();
-                    double lastAverageAdjustedFitness = species.get(i).averageAdjusetdFitness;
-                    species.get(i).computeAverageFitness();
-                    species.get(i).hasImproved(lastAverageAdjustedFitness);
-                }
-                else{
-                    // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
-                    // TODO :  USE THE FITNESS SUM (0 by default)
-                    species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
-                }
-            }
-            // Else, create it
-            else{
-                // Note : when using get, the first of the list is obtained with "i" = 0. When "i" refers to the specieID, it has to be incremented by one
-                // TODO :  USE THE FITNESS SUM (0 by default)
-                species.add(new Specie(i + 1, getSameSpeciesBrain(i + 1), offsprings.get(i), 0));
-            }
-        }
-    }
-
-    private static Set<Integer> getInnovationIDSet(List<Connection> connections) {
-        Set<Integer> innovationIDSet = new HashSet<>();
-        for (Connection connection : connections) {
-            innovationIDSet.add(connection.innovationID);
-        }
-        return innovationIDSet;
-    }
-
-    private static double getCompatibilityDifference(Brain brainLeader, Brain brainCompared) {
-        // Get everything needed to compute compatibility difference
-        double excessConnections = getExcessConnections(brainLeader, brainCompared);
-        double disjointConnections = getDisjointConnections(brainLeader, brainCompared);
-        double weightDifference = getWeightDifference(brainLeader, brainCompared);
-        double highestConnectionsAmount = getHighestConnectionsAmount(brainLeader, brainCompared);
-
-        double compatibilityDifference = (c1 * (excessConnections / highestConnectionsAmount)) + (c2 * (disjointConnections / highestConnectionsAmount)) + (c3 * (weightDifference / highestConnectionsAmount));
-
-        return compatibilityDifference;
-    }
-
-    private static double getHighestConnectionsAmount(Brain brainLeader, Brain brainCompared) {
-        return Math.max(brainLeader.neatParameters.connections.size(), brainCompared.neatParameters.connections.size());
-    }
-
-    private static double getWeightDifference(Brain brainLeader, Brain brainCompared) {
-        double meanWeightDifference;
-        List<Connection> leaderConnections = brainLeader.neatParameters.connections;
-        List<Connection> comparedConnections = brainCompared.neatParameters.connections;
-
-        // Get sets with every innovationIDs in connections lists
-        Set<Integer> innovationIDSetLeader = getInnovationIDSet(leaderConnections);
-        Set<Integer> innovationIDSetCompared = getInnovationIDSet(comparedConnections);
-
-        // These will be used to store the connections with innovationIDs that can be found in both lists
-        List<Connection> commonListLeader = new ArrayList<>();
-        List<Connection> commonListCompared = new ArrayList<>();
-
-        // Fill the common lists
-        for (Connection connection : leaderConnections) {
-            if (innovationIDSetCompared.contains(connection.innovationID)) {
-                commonListLeader.add(connection);
-            }
-        }
-        for (Connection connection : comparedConnections) {
-            if (innovationIDSetLeader.contains(connection.innovationID)) {
-                commonListCompared.add(connection);
-            }
-        }
-        // Sort the lists to have the connections with same InnovationID at the same place
-        commonListLeader.sort(Comparator.comparingInt(connection -> connection.innovationID));
-        commonListCompared.sort(Comparator.comparingInt(connection -> connection.innovationID));
-
-        // Once it's done, calculate the total weight difference.
-        // Note : both lists will always have the same size
-        double size = commonListLeader.size();
-        double weightDifferencesSum = getWeightDifferencesSum(size, commonListLeader, commonListCompared);
-
-        // Compute mean
-        meanWeightDifference = weightDifferencesSum / size;
-        // Take absolute value of the mean.
-        meanWeightDifference = Math.abs(meanWeightDifference);
-
-        return meanWeightDifference;
-    }
-
-    private static double getWeightDifferencesSum(double size, List<Connection> commonListLeader, List<Connection> commonListCompared) {
-        double weightDifferencesSum = 0;
-        // Compare the difference of weight for connections having the same Innovation ID.
-        for (int i = 0; i < size; i++) {
-            double difference;
-            double leaderWeight = commonListLeader.get(i).weight;
-            double comparedWeight = commonListCompared.get(i).weight;
-            if (leaderWeight > comparedWeight) {
-                difference = leaderWeight - comparedWeight;
-            } else {
-                difference = comparedWeight - leaderWeight;
-            }
-            weightDifferencesSum += difference;
-        }
-        return weightDifferencesSum;
-    }
-
-    private static double getDisjointConnections(Brain brainLeader, Brain brainCompared) {
-        double result = 0;
-        List<Connection> leaderConnections = brainLeader.neatParameters.connections;
-        List<Connection> comparedConnections = brainCompared.neatParameters.connections;
-        // get the highest innovation ID in the list that has the smallest highest one.
-        int highestInnovationIDInSmallestList = Math.min(getHighestInnovationID(leaderConnections), getHighestInnovationID(comparedConnections));
-
-        // Now, scan through both lists to get the amount of connections with Innovation IDs that are in only one of the two lists
-        // First we check how many connections are in the leader list and not in the compared one.
-        // get a list of all compared innovation IDs
-        Set<Integer> innovationIDsSet = getInnovationIDSet(comparedConnections);
-        for (Connection leaderConnection : leaderConnections) {
-            if (leaderConnection.innovationID < highestInnovationIDInSmallestList) {
-                if (!innovationIDsSet.contains(leaderConnection.innovationID)) {
-                    ++result;
-                }
-            }
-        }
-        // Then we do the opposite
-        innovationIDsSet = getInnovationIDSet(leaderConnections);
-        for (Connection comparedConnection : comparedConnections) {
-            if (comparedConnection.innovationID < highestInnovationIDInSmallestList) {
-                if (!innovationIDsSet.contains(comparedConnection.innovationID)) {
-                    ++result;
-                }
-            }
-        }
-        // After that we can return the result
-        return result;
-    }
-
-    private static double getExcessConnections(Brain brainLeader, Brain brainCompared) {
-        double result = 0;
-        int highestInnovationIDLeader = getHighestInnovationID(brainLeader.neatParameters.connections);
-        int highestInnovationIDCompared = getHighestInnovationID(brainCompared.neatParameters.connections);
-        // If leader has higher innovationIDs than compared brain, count how many.
-        if (highestInnovationIDLeader > highestInnovationIDCompared) {
-            for (Connection leaderConnection : brainLeader.neatParameters.connections) {
-                if (leaderConnection.innovationID > highestInnovationIDCompared) {
-                    ++result;
-                }
-            }
-        }
-        // If compared brain has higher innovationIDs than leader brain, count how many.
-        else if (highestInnovationIDCompared > highestInnovationIDLeader) {
-            for (Connection comparedConnection : brainCompared.neatParameters.connections) {
-                if (comparedConnection.innovationID > highestInnovationIDLeader) {
-                    ++result;
-                }
-            }
-        }
-        // Note : if they have the same highest innovation ID, result will be 0 which is correct
-        return result;
-    }
-
-    private static int getHighestInnovationID(List<Connection> connections) {
-        int highestInnovationID = 0;
-        for (Connection connection : connections) {
-            if (connection.innovationID > highestInnovationID) {
-                highestInnovationID = connection.innovationID;
-            }
-        }
-        return highestInnovationID;
-    }
-
-    public static void setSpeciesIDs() {
-        // For the first generation, the leaders of each specie are picked randomly out of the population that hasn't a specieID yet.
-        // From Gen 2 onwards, leaders of species are picked out of the population that already has the specieID !
-        // Gen 1
-        if(generationsNumber == 1){
-            setSpeciesIDsForBrainsWithoutSpecie();
-        }
-        // Gen 2 -> Max Gen
-        else{
-            // Get a leader of each existing specie
-            // Note to myself : the brains picked will always have a brainID bcs they're taken out of this generation population.
-            List<Brain> leadersList = getLeadersList();
-            // Reset specieID for each non-leader brain
-            resetSpecieIDForNonLeaders(leadersList);
-            // For each leader, checks which of the specieless brains could join its specie.
-            // Compute the compatibility difference and if it's below threshold, assign leader's specie ID.
-            for(Brain leaderBrain : leadersList){
-                List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
-                for (Brain brain : brainsWithoutSpecies) {
-                    double cd = getCompatibilityDifference(leaderBrain, brain);
-                    if (cd < speciationThreshold) {
-                        generationMembers.get(brain.brainID - 1).speciesID = leaderBrain.brainID;
-                    }
-                }
-            }
-            // Give a new specie to the brains who couldn't fit in any existing specie
-            setSpeciesIDsForBrainsWithoutSpecie();
-        }
-    }
-
-    private static List<Brain> getLeadersList(){
-        // Return a leader of each existing specie in the generation.
-        List<Brain> leadersList = new ArrayList<>();
-        for(int i = 1; i <= getDifferentSpeciesCount(); i++){
-            List<Brain> brainsOfSameSpecie = getSameSpeciesBrain(i);
-            leadersList.add(selectRandomBrain(brainsOfSameSpecie));
-        }
-        return leadersList;
-    }
-    public static void resetSpecieIDForNonLeaders(List<Brain> leadersList){
-        for(Brain generationalBrain : generationMembers){
-            boolean isLeader = false;
-            for(Brain leaderBrain : leadersList){
-                if(generationalBrain.brainID == leaderBrain.brainID){
-                    isLeader = true;
-                }
-            }
-
-            if(!isLeader){
-                generationalBrain.speciesID = -1;
-            }
-        }
-    }
-
-    public static void setSpeciesIDsForBrainsWithoutSpecie(){
-        List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
-        // species counter is used to assign new species IDs. For gen 1, it will be one.
-        // After gen 1, it counts how many species already exist and increments that number by one.
-        int speciesCount = getDifferentSpeciesCount() + 1;
-
-        while (!brainsWithoutSpecies.isEmpty()) {
-            // get a random brain out of the generation and give it a speciesID
-            Brain brainLeader = selectRandomBrain(brainsWithoutSpecies);
-            brainLeader.speciesID = speciesCount;
-
-            // compare every other non-assigned brain with it. If CD > threshold, give it the same speciesID.
-            for (Brain brain : brainsWithoutSpecies) {
-                double cd = getCompatibilityDifference(brainLeader, brain);
-                if (cd < speciationThreshold) {
-                    generationMembers.get(brain.brainID - 1).speciesID = speciesCount;
-                }
-            }
-
-            // Update the list of brains without speciesID
-            brainsWithoutSpecies = getBrainsWithoutSpecies(generationMembers);
-            ++speciesCount;
-        }
-    }
-
-    private static Brain selectRandomBrain(List<Brain> brains) {
-        Random rand = new Random();
-        int brainPosition = rand.nextInt(brains.size());
-        return brains.get(brainPosition);
-    }
-
-    private static List<Brain> getBrainsWithoutSpecies(List<Brain> brains) {
-        return brains.stream().filter(brain -> brain.speciesID == -1).toList();
-    }
-
-    private static void adjustFitness(){
-        for (Brain brain : generationMembers){
-            List<Brain> sameSpecieBrains = getSameSpeciesBrain(brain.speciesID);
-            long sameSpecieAmount = sameSpecieBrains.size();
-            brain.adjustedFitness = brain.fitness / sameSpecieAmount;
-        }
-    }
-    private static List<Brain> getSameSpeciesBrain(int specieID){
-        return generationMembers.stream().filter(brain -> brain.speciesID == specieID).toList();
-    }
-
-    private static int getDifferentSpeciesCount(){
-        int highestSpecieID = 0;
-        for(Brain brain : generationMembers){
-            if(brain.speciesID > highestSpecieID){
-                highestSpecieID = brain.speciesID;
-            }
-        }
-
-        // The highest specie ID is always the amount of different species
-        return highestSpecieID;
-    }
-
-    private static double getGlobalAverageAdjustedFitness(){
-        double sum = 0;
-        for(Brain brain : generationMembers){
-            sum += brain.adjustedFitness;
-        }
-
-        return (sum / generationMembers.size());
-    }
-
-    private static double getAverageAdjustedFitnessBySpecie(int specieID){
-        double sum = 0;
-        List<Brain> sameSpecieBrains = getSameSpeciesBrain(specieID);
-        long sameSpecieAmount = sameSpecieBrains.size();
-        for(Brain brain : sameSpecieBrains){
-            sum += brain.adjustedFitness;
-        }
-
-        return (sum / sameSpecieAmount);
-    }
-
-    private static void computeOffsprings(){
-        offsprings = new ArrayList<>();
-
-        //global average adjusted fitness
-        double globalMean = getGlobalAverageAdjustedFitness();
-
-        // how many different species ?
-        int differentSpeciesCounter = getDifferentSpeciesCount();
-        // loop on this number so each specie will have its average adjusted fitness
-        for(int i = 1; i <= differentSpeciesCounter; i++){
-            List<Brain> specieMembers = getSameSpeciesBrain(i);
-            double specieMean = getAverageAdjustedFitnessBySpecie(i);
-
-            offsprings.add((int)(specieMean / globalMean * specieMembers.size()));
-        }
-    }
-
-    private static void adjustThreshold(){
-        long counter = getDifferentSpeciesCount();
-        speciationThreshold = counter > targetSpeciesAmount ? speciationThreshold + stepSizeForThreshold : speciationThreshold - stepSizeForThreshold;
     }
 }
