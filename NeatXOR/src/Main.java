@@ -3,7 +3,6 @@ import classes.NeatParameters;
 import classes.nodes.Connection;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Main {
     // general parameters
@@ -24,7 +23,7 @@ public class Main {
     // First threshold is very high, and for each generation where all the nn are in the same specie, decrement it by the step size.
     // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
     // Ken uses a step size of 0.3.
-    public static double stepSizeForThreshold = 0.1;
+    public static double stepSizeForThreshold = 0.01;
     public static double speciationThreshold = 1.0;
 
     //used to keep data through generations
@@ -244,12 +243,71 @@ public class Main {
     }
 
     public static void setSpeciesIDs() {
+        // For the first generation, the leaders of each specie are picked randomly out of the population that hasn't a specieID yet.
+        // From Gen 2 onwards, leaders of species are picked out of the population that has already the specieID !
+
+        // Gen 1
+        if(generationsNumber == 1){
+            setSpeciesIDsForBrainsWithoutSpecie();
+        }
+        // Gen 2 -> Max Gen
+        else{
+            // Get a leader of each existing specie
+            // Note to myself : the brains picked will always have a brainID bcs they're taken out of this generation population.
+            List<Brain> leadersList = getLeadersList();
+
+            // Reset specieID for each non-leader brain
+            resetSpecieIDForNonLeaders(leadersList);
+            // For each leader, checks which of the specieless brains could join its specie.
+            // Compute the compatibility difference and if it's below threshold, assign leader's specie ID.
+            for(Brain leaderBrain : leadersList){
+                List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generation);
+                for (Brain brain : brainsWithoutSpecies) {
+                    double cd = getCompatibilityDifference(leaderBrain, brain);
+                    if (cd < speciationThreshold) {
+                        generation.get(brain.brainID - 1).speciesID = leaderBrain.brainID;
+                    }
+                }
+            }
+
+            // Give a new specie to the brains who couldn't fit in any existing specie
+            setSpeciesIDsForBrainsWithoutSpecie();
+        }
+    }
+
+    private static List<Brain> getLeadersList(){
+        // Return a leader of each existing specie in the generation.
+        List<Brain> leadersList = new ArrayList<>();
+        for(int i = 1; i <= getDifferentSpeciesCount(); i++){
+            List<Brain> brainsOfSameSpecie = getSameSpeciesBrain(i);
+            leadersList.add(selectRandomBrain(brainsOfSameSpecie));
+        }
+        return leadersList;
+    }
+    public static void resetSpecieIDForNonLeaders(List<Brain> leadersList){
+        for(Brain generationalBrain : generation){
+            boolean isLeader = false;
+            for(Brain leaderBrain : leadersList){
+                if(generationalBrain.brainID == leaderBrain.brainID){
+                    isLeader = true;
+                }
+            }
+
+            if(!isLeader){
+                generationalBrain.speciesID = -1;
+            }
+        }
+    }
+
+    public static void setSpeciesIDsForBrainsWithoutSpecie(){
         List<Brain> brainsWithoutSpecies = getBrainsWithoutSpecies(generation);
-        int speciesCount = 1;
+        // species counter is used to assign new species IDs. For gen 1, it will be one.
+        // After gen 1, it counts how many species already exist and increments that number by one.
+        int speciesCount = getDifferentSpeciesCount() + 1;
 
         while (!brainsWithoutSpecies.isEmpty()) {
             // get a random brain out of the generation and give it a speciesID
-            Brain brainLeader = selectRandom(brainsWithoutSpecies);
+            Brain brainLeader = selectRandomBrain(brainsWithoutSpecies);
             brainLeader.speciesID = speciesCount;
 
             // compare every other non-assigned brain with it. If CD > threshold, give it the same speciesID.
@@ -266,14 +324,14 @@ public class Main {
         }
     }
 
-    private static Brain selectRandom(List<Brain> brains) {
+    private static Brain selectRandomBrain(List<Brain> brains) {
         Random rand = new Random();
         int brainPosition = rand.nextInt(brains.size());
         return brains.get(brainPosition);
     }
 
     private static List<Brain> getBrainsWithoutSpecies(List<Brain> brains) {
-        return brains.stream().filter(brain -> brain.speciesID == -1).collect(Collectors.toList());
+        return brains.stream().filter(brain -> brain.speciesID == -1).toList();
     }
 
     private static void adjustFitness(){
@@ -284,7 +342,7 @@ public class Main {
         }
     }
     private static List<Brain> getSameSpeciesBrain(int specieID){
-        return generation.stream().filter(obj -> obj.speciesID == specieID).toList();
+        return generation.stream().filter(brain -> brain.speciesID == specieID).toList();
     }
 
     private static int getDifferentSpeciesCount(){
