@@ -2,8 +2,6 @@ package helpers;
 
 import classes.neuralNetworks.Brain;
 import classes.neuralNetworks.Specie;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class ParametersHelper {
@@ -28,20 +26,15 @@ public class ParametersHelper {
     }
 
     public static void computeOffsprings(List<Brain> generationMembers, List<Specie> species){
-        List<Integer> offsprings = new ArrayList<>();
-
         //global average adjusted fitness
         double globalMean = getGlobalAverageAdjustedFitness(generationMembers);
 
-        // how many different species ?
-        int differentSpeciesCounter = SpeciesHelper.getDifferentSpeciesCount(generationMembers);
-        // loop on this number so each specie will have its average adjusted fitness
-        for(int i = 1; i <= differentSpeciesCounter; i++){
-            List<Brain> specieMembers = BrainsHelper.getSameSpeciesBrain(i, generationMembers);
-            double specieMean = getAverageAdjustedFitnessBySpecie(i, generationMembers);
+        // loop on the species so each will have its average adjusted fitness
+        for(Specie specie : species){
+            List<Brain> specieMembers = BrainsHelper.getSameSpeciesBrain(specie.specieID, generationMembers);
+            double specieMean = getAverageAdjustedFitnessBySpecie(specie.specieID, generationMembers);
             // Update the offspring value of the specie
-            int finalI = i;
-            species.stream().filter(specie -> specie.specieID == finalI).toList().get(0).offspring = (int)(specieMean / globalMean * specieMembers.size());
+            species.stream().filter(item -> item.specieID == specie.specieID).toList().get(0).offspring = (int)(specieMean / globalMean * specieMembers.size());
         }
     }
 

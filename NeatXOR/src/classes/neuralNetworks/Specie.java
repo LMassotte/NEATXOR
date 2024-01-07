@@ -61,7 +61,7 @@ public class Specie {
                 + this.averageFitness + " and average adjusted fitness is "
                 + this.averageAdjusetdFitness +". \n It hasn't evolved since "
                 + this.gensSinceImproved + " generations. \n"
-                + " The next generation will have " + this.offspring + " members of this specie. \n";
+                + " The next generation can have up to " + this.offspring + " members of this specie. \n";
     }
 
     public List<Brain> selectParentsForNextGen(int tournamentSize, List<Brain> specieMembers){

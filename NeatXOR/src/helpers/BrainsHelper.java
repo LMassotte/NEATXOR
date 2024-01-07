@@ -8,8 +8,13 @@ import java.util.Random;
 public class BrainsHelper {
     public static Brain selectRandomBrain(List<Brain> brains) {
         Random rand = new Random();
-        int brainPosition = rand.nextInt(brains.size());
-        return brains.get(brainPosition);
+        if(!brains.isEmpty()){
+            int brainPosition = rand.nextInt(brains.size());
+            return brains.get(brainPosition);
+        }
+        else{
+            return null;
+        }
     }
 
     public static List<Brain> getSameSpeciesBrain(int specieID, List<Brain> generationMembers){

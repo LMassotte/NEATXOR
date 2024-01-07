@@ -11,7 +11,7 @@ import java.util.*;
 public class Main {
     // general parameters
     public static boolean isElitist = false;
-    public static int generationsNumber = 1;
+    public static int generationsNumber = 100;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
     public static int inputNodesNumber = 3;
@@ -29,7 +29,7 @@ public class Main {
     // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
     // Ken uses a step size of 0.3.
     public static double stepSizeForThreshold = 0.01;
-    public static double speciationThreshold = 0.1;
+    public static double speciationThreshold = 1.0;
 
     // used during crossover
     public static int tournamentSize = 3;
@@ -96,26 +96,37 @@ public class Main {
             }
 
             // 2. COLLECT INFO ABOUT GENERATION AND UPDATE PARAMETERS
-
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
             SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, c1, c2, c3, speciationThreshold);
-            // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
-            // For new species : Add a new Specie to the list.
-            SpeciesHelper.updateSpecies(species, generationMembers);
+
             // Divide the fitness by the amount of brains having the speciesID
             ParametersHelper.adjustFitness(generationMembers);
+
+            // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
+            // For new species : Add a new Specie to the list.
+            SpeciesHelper.addAndUpdateSpecies(species, generationMembers);
+            // Number of species can grow very fast, I want the IDs to be continuous
+            SpeciesHelper.normalizeSpeciesIDs(species);
+
             // Compute the offsprings (amount of members from each specie in the next generation)
             ParametersHelper.computeOffsprings(generationMembers, species);
+
             // Adjust offsprings if the total isn't equal to the population size
             ParametersHelper.adjustOffsprings(popSize, species);
+
+            // Update species members list, because fitness have changed
+            updateSpeciesMembersList();
+
             // Now we can adjust the speciation threshold according to the amount of species we have in this generation
             speciationThreshold = ParametersHelper.adjustThreshold(generationMembers, speciationThreshold, targetSpeciesAmount, stepSizeForThreshold);
+
             // Display information about the generation that just played
             DisplayGenerationInformation(actualGeneration);
 
             // Update best brain in generation and display it
             bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
             bestBrainsFromEachGeneration.add(bestBrain);
+
             // Draw best brain and display information about the generation
             DrawBestBrain(actualGeneration);
 
@@ -127,18 +138,18 @@ public class Main {
             // Fill the generation with offsprings
             // Each specie has an offspring number => there will be x members of that specie
             // Total is always popSize
-            fillWithOffsprings();
+            fillWithOffsprings(actualGeneration);
             // Till there, our new generation is fully in generationMembers
             // And the generation that was used just before is in temporaryGenerationMembers.
             // TODO: Update species ????
             updateSpeciesMembersList();
-            for(Specie specie : species){
-                System.out.println(specie);
-                System.out.println("_____MEMBERS_____");
-                for(Brain brain : specie.members){
-                    System.out.println("                    " + brain);
-                }
-            }
+//            for(Specie specie : species){
+//                System.out.println(specie);
+//                System.out.println("_____MEMBERS_____");
+//                for(Brain brain : specie.members){
+//                    System.out.println("                    " + brain);
+//                }
+//            }
 
 
             // 4. ELITISM
@@ -157,7 +168,7 @@ public class Main {
         }
     }
 
-    private static void fillWithOffsprings(){
+    private static void fillWithOffsprings(int actualGeneration){
         // this value counts how many brains have been added to next gen.
         int addedToNextGenCounter = 0;
 
@@ -221,7 +232,7 @@ public class Main {
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
             System.out.println("_______________________________________________________");
             //Show network topology
-            bestBrain.drawNetwork();
+//            bestBrain.drawNetwork();
         }
     }
 }
