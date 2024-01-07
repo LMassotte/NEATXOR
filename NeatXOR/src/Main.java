@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main {
-    //general parameters
+    // general parameters
     public static int generationsNumber = 1;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
@@ -14,10 +14,18 @@ public class Main {
     public static int outputNodesNumber = 1;
     public static int hiddenNodesNumber = 0;
     public static double percentageConn = 1.0;
+    // goal
+    public static double targetFitness = 3.7;
+    public static int targetSpeciesAmount = 5;
 
-    //used during speciation
+    // used during speciation
     public static double c1 = 1.0, c2 = 1.0, c3 = 0.4;
-    public static double speciationThreshold = 0.1;
+    // NEAT IA YouTube channel : define a step size of 0.5
+    // First threshold is very high, and for each generation where all the nn are in the same specie, decrement it by the step size.
+    // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
+    // Ken uses a step size of 0.3.
+    public static double stepSizeForThreshold = 0.1;
+    public static double speciationThreshold = 1.0;
 
     //used to keep data through generations
     public static double bestAdjustedFitnessInPopulation = 0;
@@ -65,6 +73,9 @@ public class Main {
             adjustFitness();
             // Compute the offsprings (amount of members from each specie in the next generation)
             computeOffsprings();
+            // Now we can adjust the speciation threshold according to the amount of species we have in this generation
+            adjustThreshold();
+            System.out.println("____________________ GENERATION " + generationsNumber + " ____________________");
             for(int i = 0; i < offsprings.size(); i++){
                 System.out.println("The next generation will have " + offsprings.get(i) + " members of specie " + (i + 1));
             }
@@ -323,5 +334,10 @@ public class Main {
 
             offsprings.add((int)(specieMean / globalMean * specieMembers.size()));
         }
+    }
+
+    private static void adjustThreshold(){
+        long counter = getDifferentSpeciesCount();
+        speciationThreshold = counter > targetSpeciesAmount ? speciationThreshold + stepSizeForThreshold : speciationThreshold - stepSizeForThreshold;
     }
 }
