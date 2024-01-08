@@ -6,6 +6,12 @@ import java.util.List;
 import java.util.Random;
 
 public class BrainsHelper {
+
+    public static void mutateBrains(List<Brain> brains){
+        for(Brain brain : brains){
+            brain.mutate();
+        }
+    }
     public static Brain selectRandomBrain(List<Brain> brains) {
         Random rand = new Random();
         if(!brains.isEmpty()){

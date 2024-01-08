@@ -114,7 +114,36 @@ public class Brain {
     }
 
     public void mutate() {
-
+        Random rand = new Random();
+        int randomBrainMutationPercentage = rand.nextInt(100) + 1;
+        // 80% chances of mutation
+        if(randomBrainMutationPercentage <= 80){
+            for(Connection connection : this.neatParameters.connections){
+                int randomConnectionMutationPercentage = rand.nextInt(100) + 1;
+                if(randomConnectionMutationPercentage <= 90){
+                    int randomAddOrSubstract = rand.nextInt(2);
+                    // Note: weight has to stay between -1 and 1
+//                    System.out.println("Connection " + connection.innovationID + " had a weight of " + connection.weight);
+                    // If it's getting too high, force lower it
+                    if((connection.weight + connection.weight * 0.2) > 0.99){
+                        connection.weight = connection.weight - connection.weight * 0.2;
+                    }
+                    // If it's getting too low, force higher it
+                    else if(connection.weight - connection.weight * 0.2 < -0.99){
+                        connection.weight = connection.weight + connection.weight * 0.2;
+                    }
+                    // If it's balanced, randomly higher or lower it
+                    else if(-0.79 < connection.weight && connection.weight < 0.79)
+                    {
+                         connection.weight = randomAddOrSubstract == 0 ? connection.weight + connection.weight * 0.2 : connection.weight - connection.weight * 0.2;
+                    }
+//                    System.out.println(" and i modify it to " + connection.weight);
+                }
+                else{
+                    connection.weight = rand.nextDouble() * 2 - 1;
+                }
+            }
+        }
     }
 
     public void runNetwork() {

@@ -11,7 +11,7 @@ public class SpeciesHelper {
         return species.stream().filter(specie -> specie.specieID == specieID).toList();
     }
 
-    public static void setSpeciesIDs(int generationsNumber, List<Brain> generationMembers, double c1, double c2, double c3, double speciationThreshold) {
+    public static void setSpeciesIDs(int generationsNumber, List<Brain> generationMembers, List<Specie> species, double c1, double c2, double c3, double speciationThreshold) {
         // For the first generation, the leaders of each specie are picked randomly out of the population that hasn't a specieID yet.
         // From Gen 2 onwards, leaders of species are picked out of the population that already has the specieID !
         // Gen 1
@@ -23,7 +23,7 @@ public class SpeciesHelper {
             // Get a leader of each existing specie
             // Note to myself : the brains picked will always have a brainID bcs they're taken out of this generation population.
 
-            List<Brain> leadersList = getLeadersList(generationMembers);
+            List<Brain> leadersList = getLeadersList(generationMembers, species);
             // Reset specieID for each non-leader brain
             resetSpecieIDForNonLeaders(leadersList, generationMembers);
             // For each leader, checks which of the specieless brains could join its specie.
@@ -94,13 +94,14 @@ public class SpeciesHelper {
     }
 
 
-    public static List<Brain> getLeadersList(List<Brain> generationMembers) {
+    public static List<Brain> getLeadersList(List<Brain> generationMembers, List<Specie> species) {
         // Return a leader of each existing specie in the generation.
         List<Brain> leadersList = new ArrayList<>();
-        int speciesCounter = SpeciesHelper.getDifferentSpeciesCount(generationMembers);
-        for (int i = 1; i <= speciesCounter; i++) {
-            List<Brain> brainsOfSameSpecie = BrainsHelper.getSameSpeciesBrain(i, generationMembers);
-            leadersList.add(BrainsHelper.selectRandomBrain(brainsOfSameSpecie));
+        for (Specie specie : species) {
+            List<Brain> brainsOfSameSpecie = BrainsHelper.getSameSpeciesBrain(specie.specieID, generationMembers);
+            Brain leaderBrain = BrainsHelper.selectRandomBrain(brainsOfSameSpecie);
+            // TODO : fix leaderBrain == null issue
+            leadersList.add(leaderBrain);
 //            if (!brainsOfSameSpecie.isEmpty()) {
 //                leadersList.add(BrainsHelper.selectRandomBrain(brainsOfSameSpecie));
 //            }
@@ -149,10 +150,10 @@ public class SpeciesHelper {
         }
     }
 
-    public static void normalizeSpeciesIDs(List<Specie> species){
+    public static void normalizeSpeciesIDs(List<Specie> species) {
         int counter = 1;
-        for(Specie specie : species){
-            for(Brain memberOfSpecie : specie.members){
+        for (Specie specie : species) {
+            for (Brain memberOfSpecie : specie.members) {
                 memberOfSpecie.speciesID = counter;
             }
             specie.specieID = counter;

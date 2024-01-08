@@ -1,6 +1,7 @@
 import classes.neuralNetworks.Brain;
 import classes.NeatParameters;
 import classes.neuralNetworks.Specie;
+import classes.nodes.Connection;
 import helpers.BrainsHelper;
 import helpers.ConnectionsHelper;
 import helpers.ParametersHelper;
@@ -11,7 +12,7 @@ import java.util.*;
 public class Main {
     // general parameters
     public static boolean isElitist = false;
-    public static int generationsNumber = 100;
+    public static int generationsNumber = 1000;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
     public static int inputNodesNumber = 3;
@@ -97,7 +98,7 @@ public class Main {
 
             // 2. COLLECT INFO ABOUT GENERATION AND UPDATE PARAMETERS
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
-            SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, c1, c2, c3, speciationThreshold);
+            SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, species, c1, c2, c3, speciationThreshold);
 
             // Divide the fitness by the amount of brains having the speciesID
             ParametersHelper.adjustFitness(generationMembers);
@@ -140,6 +141,11 @@ public class Main {
             // Total is always popSize
             fillWithOffsprings(actualGeneration);
             // Till there, our new generation is fully in generationMembers
+
+            // 4. MUTATION
+
+            // Mutate brains (80% chance that its weights will be modified)
+            BrainsHelper.mutateBrains(generationMembers);
             // And the generation that was used just before is in temporaryGenerationMembers.
             // TODO: Update species ????
             updateSpeciesMembersList();
@@ -223,6 +229,13 @@ public class Main {
         for (Specie specie : species) {
             // Print all the information about the specie
             System.out.println(specie.toString());
+            for(Brain member : specie.members){
+                for(Connection connection : member.neatParameters.connections){
+                    if(connection.weight > 1.0 || connection.weight < -1.0){
+                        System.out.println("probleme pour la connexion " + connection.innovationID + " du brain " + member.brainID);
+                    }
+                }
+            }
         }
     }
 
