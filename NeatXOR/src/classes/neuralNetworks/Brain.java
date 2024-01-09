@@ -4,6 +4,7 @@ import classes.NeatParameters;
 import classes.canvas.NeuralNetworkCanvas;
 import classes.nodes.Connection;
 import classes.nodes.Node;
+import helpers.ConnectionsHelper;
 
 import javax.swing.*;
 import java.util.*;
@@ -45,41 +46,51 @@ public class Brain {
     }
 
     //always add a node through this to ensure that ids are different
-    public void addNode(int nodeType, int nodeLayer, double sumInput, double sumOutput) {
+    public Node addNode(int nodeType, int nodeLayer, double sumInput, double sumOutput) {
+        Node addedNode = new Node();
         switch (nodeType) {
             //input node
             case 1:
                 neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                addedNode = findNodeById(neatParameters.nodeIDsCounter);
                 ++neatParameters.nodeIDsCounter;
                 break;
 
             //output node
             case 2:
                 neatParameters.outputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                addedNode = findNodeById(neatParameters.nodeIDsCounter);
                 ++neatParameters.nodeIDsCounter;
                 break;
 
             //bias node
             case 3:
                 neatParameters.inputNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                addedNode = findNodeById(neatParameters.nodeIDsCounter);
                 ++neatParameters.nodeIDsCounter;
                 break;
 
             //hidden node
             case 0:
                 neatParameters.hiddenNodes.add(new Node(neatParameters.nodeIDsCounter, nodeType, nodeLayer, sumInput, sumOutput));
+                addedNode = findNodeById(neatParameters.nodeIDsCounter);
                 ++neatParameters.nodeIDsCounter;
                 break;
 
             default:
                 break;
         }
+        return addedNode;
     }
 
-    //always add a connection through this to ensure that innovation ids are different
+    //always add a connection through one of these 2 to ensure that innovation ids are different
     public void addConnection(int inNodeID, int outNodeID, boolean isEnabled, boolean isRecurrent) {
         Random random = new Random();
         double weight = random.nextDouble() * 2 - 1;
+        neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
+        neatParameters.innovationIDsCounter += 1000;
+    }
+    public void addConnectionWithWeight(int inNodeID, int outNodeID, double weight, boolean isEnabled, boolean isRecurrent) {
         neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
         neatParameters.innovationIDsCounter += 1000;
     }
@@ -107,6 +118,101 @@ public class Brain {
             neatParameters.inputNodes.get(i).sumInput = inputValuesList[i];
             //input nodes => sum input = sum output
             neatParameters.inputNodes.get(i).sumOutput = inputValuesList[i];
+        }
+    }
+
+    private int depthFirstSearch(int currentNodeID, Set<Integer> visitedNodeIDs){
+        // Avoid infinite loops
+        if(visitedNodeIDs.contains((currentNodeID))){
+            return 0;
+        }
+        // We need to have the currentNodeID in the list
+        visitedNodeIDs.add(currentNodeID);
+
+        Node currentNode = findNodeById(currentNodeID);
+
+        if(currentNode.nodeLayer == 1){
+            // Reach destination
+            visitedNodeIDs.remove(currentNode);
+            return 1;
+        }
+
+        int maxChildDistance = 0;
+        for(Connection connection : this.neatParameters.connections){
+            if(connection.outNodeID == currentNodeID){
+                // Recursivity on the connections before, till reaching layer 1
+                int childDistance = depthFirstSearch(connection.inNodeID, visitedNodeIDs);
+                maxChildDistance = Math.max(maxChildDistance, childDistance);
+            }
+        }
+
+        visitedNodeIDs.remove(currentNodeID);
+        return maxChildDistance + 1;
+    }
+
+    private int findLongestDistanceToInputLayer(Node hiddenNode){
+        // DO THIS USING DEPTH FIRST SEARCH ALGORITHM
+        int distance = -1;
+        // Keep in memory the visited nodes
+        Set<Integer> visitedNodeIDs = new HashSet<>();
+        for(Connection connection : this.neatParameters.connections){
+            if(outputNodeID == hiddenNode.nodeID){
+                int currentDistance = depthFirstSearch(connection.inNodeID, visitedNodeIDs);
+                distance = Math.max(distance, currentDistance);
+            }
+        }
+        return distance;
+    }
+
+    public void resetLayers(){
+        for(Node hiddenNode : this.neatParameters.hiddenNodes){
+            int distance = findLongestDistanceToInputLayer(hiddenNode);
+            hiddenNode.nodeLayer = distance + 1;
+        }
+        // All hidden nodes layers have been reset to their new value
+        // Reset output layer now
+
+        // First get the output layer value by iterating through the hidden nodes and getting the highest layer
+        int outputLayer = 0;
+        for(Node hiddenNode : this.neatParameters.hiddenNodes){
+            if(hiddenNode.nodeLayer > outputLayer){
+                outputLayer = hiddenNode.nodeLayer;
+            }
+        }
+        // Then add 1 and set this value to the output node(s)
+        ++outputLayer;
+        for(Node outputNode : this.neatParameters.outputNodes){
+            outputNode.nodeLayer = outputLayer;
+        }
+        // Done
+    }
+
+    public void mutateNewNode(){
+        Random rand = new Random();
+        int randomBrainMutationPercentage = rand.nextInt(100) + 1;
+        if (randomBrainMutationPercentage <= 5) {
+            Connection randomBrainConnection = ConnectionsHelper.getRandomConnectionInList(this.neatParameters.connections);
+            if(randomBrainConnection != null){
+                // Get the in and out node of the connection in tmp variables
+                Node tmpInNode = findNodeById(randomBrainConnection.inNodeID);
+                Node tmpOutNode = findNodeById(randomBrainConnection.outNodeID);
+
+                // Disable connection
+                this.neatParameters.connections.stream()
+                        .filter(connection -> connection.innovationID == randomBrainConnection.innovationID)
+                        .forEach(connection -> connection.isEnabled = false);
+
+                // Add a new hidden node (type = 0) with layer = -1, sumInput = 0 et sumOutput = 0
+                Node newNode = this.addNode(0, -1, 0, 0);
+
+                // Add 2 new connections
+                // First connection has tmpInNode as input node and new node as output node, weight = disabled connection's weight
+                this.addConnectionWithWeight(tmpInNode.nodeID, newNode.nodeID, randomBrainConnection.weight, true, false);
+                // Second has newNode as input node and tmpOutNode as output node, weight = random
+                this.addConnection(newNode.nodeID, tmpOutNode.nodeID, true, false);
+
+                this.resetLayers();
+            }
         }
     }
 
@@ -348,7 +454,7 @@ public class Brain {
     @Override
     public String toString() {
         return "This brain (Brain " + this.brainID + ") of specie " + this.speciesID + " has " + this.neatParameters.inputNodes.size() + " inputs, "
-                + this.neatParameters.hiddenNodesNumber + " hidden nodes and " + this.neatParameters.outputNodes.size() + " outputs."
+                + this.neatParameters.hiddenNodes.size() + " hidden nodes and " + this.neatParameters.outputNodes.size() + " outputs."
                 + "It has " + this.neatParameters.connections.size() + " connections.";
     }
 }

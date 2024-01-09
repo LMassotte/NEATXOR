@@ -12,9 +12,9 @@ import java.util.*;
 public class Main {
     // general parameters
     public static boolean isElitist = false;
-    public static int generationsNumber = 1000;
+    public static int generationsNumber = 100;
     public static int brainIDsCounter = 1;
-    public static int popSize = 50;
+    public static int popSize = 1;
     public static int inputNodesNumber = 3;
     public static int outputNodesNumber = 1;
     public static int hiddenNodesNumber = 0;
@@ -147,7 +147,6 @@ public class Main {
             // Mutate brains (80% chance that its weights will be modified, 5% chance of having a new connection)
             BrainsHelper.mutateBrains(generationMembers);
             // And the generation that was used just before is in temporaryGenerationMembers.
-            // TODO: Update species ????
             updateSpeciesMembersList();
 //            for(Specie specie : species){
 //                System.out.println(specie);

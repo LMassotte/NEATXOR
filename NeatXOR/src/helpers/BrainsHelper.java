@@ -12,7 +12,10 @@ public class BrainsHelper {
             // 80% chance that its connections weights are modified
             brain.mutateWeights();
             // 5% chance of having a new connection
+            // This can also enable a disabled connection under specific conditions
             brain.mutateNewConnection();
+            // 5% chances of having a new node
+            brain.mutateNewNode();
         }
     }
     public static Brain selectRandomBrain(List<Brain> brains) {

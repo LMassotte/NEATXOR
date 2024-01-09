@@ -6,6 +6,16 @@ import classes.nodes.Connection;
 import java.util.*;
 
 public class ConnectionsHelper {
+    public static Connection getRandomConnectionInList(List<Connection> connections){
+        Random rand = new Random();
+        if(!connections.isEmpty()){
+            int connectionPosition = rand.nextInt(connections.size());
+            return connections.get(connectionPosition);
+        }
+        else{
+            return null;
+        }
+    }
     public static Set<Integer> getInnovationIDSet(List<Connection> connections) {
         Set<Integer> innovationIDSet = new HashSet<>();
         for (Connection connection : connections) {

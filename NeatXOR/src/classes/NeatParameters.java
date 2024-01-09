@@ -24,9 +24,6 @@ public class NeatParameters {
 
     public NeatParameters(int populationSize, int inputNodesNumber, int outputNodesNumber, int hiddenNodesNumber, double percentageConn){
         this.populationSize = populationSize;
-        this.inputNodesNumber = inputNodesNumber;
-        this.outputNodesNumber = outputNodesNumber;
-        this.hiddenNodesNumber = hiddenNodesNumber;
         this.percentageConn = percentageConn;
         this.inputNodes = new ArrayList<>();
         this.outputNodes = new ArrayList<>();
