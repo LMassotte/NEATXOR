@@ -6,7 +6,7 @@ import classes.nodes.Connection;
 import classes.nodes.Node;
 
 import javax.swing.*;
-import java.util.Random;
+import java.util.*;
 
 import static java.lang.Math.exp;
 
@@ -35,12 +35,12 @@ public class Brain {
         addNode(3, 1, 0, 0);
         addNode(2, 3, 0, 0);
 
-        outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).id;
+        outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).nodeID;
 
         if (generationNumber == 1) {
-            addConnection(1, outputNodeID, true, false, 1);
-            addConnection(2, outputNodeID, true, false, 1);
-            addConnection(3, outputNodeID, true, false, 1);
+            addConnection(1, outputNodeID, true, false);
+            addConnection(2, outputNodeID, true, false);
+            addConnection(3, outputNodeID, true, false);
         }
     }
 
@@ -77,12 +77,9 @@ public class Brain {
     }
 
     //always add a connection through this to ensure that innovation ids are different
-    public void addConnection(int inNodeID, int outNodeID, boolean isEnabled, boolean isRecurrent, int generationNumber) {
-        double weight = 0;
-        if (generationNumber == 1) {
-            Random random = new Random();
-            weight = random.nextDouble() * 2 - 1;
-        }
+    public void addConnection(int inNodeID, int outNodeID, boolean isEnabled, boolean isRecurrent) {
+        Random random = new Random();
+        double weight = random.nextDouble() * 2 - 1;
         neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
         neatParameters.innovationIDsCounter += 1000;
     }
@@ -113,33 +110,97 @@ public class Brain {
         }
     }
 
-    public void mutate() {
+    public void mutateNewConnection() {
+        Random rand = new Random();
+        int randomBrainMutationPercentage = rand.nextInt(100) + 1;
+        // 5% chances of mutation
+        if (randomBrainMutationPercentage <= 5) {
+            // Merge all nodes of the brain in one list
+            List<Node> brainNodes = new ArrayList<>();
+            brainNodes.addAll(this.neatParameters.inputNodes);
+            brainNodes.addAll(this.neatParameters.hiddenNodes);
+            brainNodes.addAll(this.neatParameters.outputNodes);
+
+            Node inNode = new Node();
+            Node outNode = new Node();
+            // Select 2 nodes as inNode and outNode th
+            int counter = 0;
+            while (counter < 20) {
+                boolean validationFlag = true;
+                inNode = brainNodes.get(rand.nextInt(brainNodes.size()));
+                outNode = brainNodes.get(rand.nextInt(brainNodes.size()));
+
+                // First verification : not the same node
+                if (inNode.nodeID == outNode.nodeID) {
+                    validationFlag = false;
+                }
+                // Second verification : not on the same layer
+                if (inNode.nodeLayer == outNode.nodeLayer) {
+                    validationFlag = false;
+                }
+                // Third verification : output is in a deeper layer than input
+                if (inNode.nodeLayer > outNode.nodeLayer) {
+                    validationFlag = false;
+                }
+                // Fourth verification : no existing connection from this input to this output
+                for (Connection connection : this.neatParameters.connections) {
+                    if (connection.inNodeID == inNode.nodeID && connection.outNodeID == outNode.nodeID) {
+                        validationFlag = false;
+                    }
+                    // Just to be sure, check if the connection hasn't been created backward
+                    if (connection.inNodeID == outNode.nodeID && connection.outNodeID == inNode.nodeID) {
+                        validationFlag = false;
+                    }
+                }
+                if (validationFlag) {
+                    System.out.println("test");
+                    break;
+                }
+                if(counter == 19){
+                    // Failed too much times.
+                    // Reset nodes. All values are set to -1 including the nodeID.
+                    // It won't be added to the connections list.
+                    inNode = new Node();
+                    outNode = new Node();
+                }
+                ++counter;
+            }
+            // If after 20 tries, both nodeIDs successfully passed through the validation tests, add a new connection
+            // (Weight will be randomized, innovationID will take the next unique available)
+            if(inNode.nodeID != -1 && outNode.nodeID != -1){
+                addConnection(inNode.nodeID, outNode.nodeID, true, false);
+//                System.out.println("New connection added through mutation : ");
+                Connection tmpConnection = Collections.max(this.neatParameters.connections, Comparator.comparingInt(c -> c.innovationID));
+//                System.out.println(tmpConnection);
+            }
+        }
+    }
+
+    public void mutateWeights() {
         Random rand = new Random();
         int randomBrainMutationPercentage = rand.nextInt(100) + 1;
         // 80% chances of mutation
-        if(randomBrainMutationPercentage <= 80){
-            for(Connection connection : this.neatParameters.connections){
+        if (randomBrainMutationPercentage <= 80) {
+            for (Connection connection : this.neatParameters.connections) {
                 int randomConnectionMutationPercentage = rand.nextInt(100) + 1;
-                if(randomConnectionMutationPercentage <= 90){
+                if (randomConnectionMutationPercentage <= 90) {
                     int randomAddOrSubstract = rand.nextInt(2);
                     // Note: weight has to stay between -1 and 1
 //                    System.out.println("Connection " + connection.innovationID + " had a weight of " + connection.weight);
                     // If it's getting too high, force lower it
-                    if((connection.weight + connection.weight * 0.2) > 0.99){
+                    if ((connection.weight + connection.weight * 0.2) > 0.99) {
                         connection.weight = connection.weight - connection.weight * 0.2;
                     }
                     // If it's getting too low, force higher it
-                    else if(connection.weight - connection.weight * 0.2 < -0.99){
+                    else if (connection.weight - connection.weight * 0.2 < -0.99) {
                         connection.weight = connection.weight + connection.weight * 0.2;
                     }
                     // If it's balanced, randomly higher or lower it
-                    else if(-0.79 < connection.weight && connection.weight < 0.79)
-                    {
-                         connection.weight = randomAddOrSubstract == 0 ? connection.weight + connection.weight * 0.2 : connection.weight - connection.weight * 0.2;
+                    else if (-0.79 < connection.weight && connection.weight < 0.79) {
+                        connection.weight = randomAddOrSubstract == 0 ? connection.weight + connection.weight * 0.2 : connection.weight - connection.weight * 0.2;
                     }
 //                    System.out.println(" and i modify it to " + connection.weight);
-                }
-                else{
+                } else {
                     connection.weight = rand.nextDouble() * 2 - 1;
                 }
             }
@@ -163,7 +224,7 @@ public class Brain {
                     if (hiddenNode.nodeLayer == layerCount) {
                         hiddenNode.sumInput = 0;
                         for (Connection connection : neatParameters.connections) {
-                            if (hiddenNode.id == connection.outNodeID) {
+                            if (hiddenNode.nodeID == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
                                 assert connectionInputNode != null;
                                 hiddenNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
@@ -179,7 +240,7 @@ public class Brain {
                     if (outputNode.nodeLayer == layerCount) {
                         outputNode.sumInput = 0;
                         for (Connection connection : neatParameters.connections) {
-                            if (outputNode.id == connection.outNodeID) {
+                            if (outputNode.nodeID == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
                                 assert connectionInputNode != null;
                                 outputNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
@@ -196,15 +257,15 @@ public class Brain {
 
     private Node findNodeById(int nodeId) {
         for (Node inputNode : neatParameters.inputNodes) {
-            if (inputNode.id == nodeId)
+            if (inputNode.nodeID == nodeId)
                 return inputNode;
         }
         for (Node outputNode : neatParameters.outputNodes) {
-            if (outputNode.id == nodeId)
+            if (outputNode.nodeID == nodeId)
                 return outputNode;
         }
         for (Node hiddenNode : neatParameters.hiddenNodes) {
-            if (hiddenNode.id == nodeId)
+            if (hiddenNode.nodeID == nodeId)
                 return hiddenNode;
         }
         return null;
@@ -212,13 +273,13 @@ public class Brain {
 
     private void printSumOutputs() {
         for (Node node : neatParameters.inputNodes) {
-            System.out.println("Input node " + node.id + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
+            System.out.println("Input node " + node.nodeID + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
         }
         for (Node node : neatParameters.hiddenNodes) {
-            System.out.println("Hidden node " + node.id + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
+            System.out.println("Hidden node " + node.nodeID + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
         }
         for (Node node : neatParameters.outputNodes) {
-            System.out.println("Output node " + node.id + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
+            System.out.println("Output node " + node.nodeID + ": input value = " + node.sumInput + " and output value = " + node.sumOutput);
         }
     }
 
@@ -243,19 +304,19 @@ public class Brain {
         // copy input nodes
         this.neatParameters.inputNodes.clear();
         for (Node inputNode : other.neatParameters.inputNodes) {
-            this.neatParameters.inputNodes.add(new Node(inputNode.id, inputNode.nodeType, inputNode.nodeLayer, inputNode.sumInput, inputNode.sumOutput));
+            this.neatParameters.inputNodes.add(new Node(inputNode.nodeID, inputNode.nodeType, inputNode.nodeLayer, inputNode.sumInput, inputNode.sumOutput));
         }
 
         // copy hidden nodes
         this.neatParameters.hiddenNodes.clear();
         for (Node hiddenNode : other.neatParameters.hiddenNodes) {
-            this.neatParameters.hiddenNodes.add(new Node(hiddenNode.id, hiddenNode.nodeType, hiddenNode.nodeLayer, hiddenNode.sumInput, hiddenNode.sumOutput));
+            this.neatParameters.hiddenNodes.add(new Node(hiddenNode.nodeID, hiddenNode.nodeType, hiddenNode.nodeLayer, hiddenNode.sumInput, hiddenNode.sumOutput));
         }
 
         // copy output nodes
         this.neatParameters.outputNodes.clear();
         for (Node outputNode : other.neatParameters.outputNodes) {
-            this.neatParameters.outputNodes.add(new Node(outputNode.id, outputNode.nodeType, outputNode.nodeLayer, outputNode.sumInput, outputNode.sumOutput));
+            this.neatParameters.outputNodes.add(new Node(outputNode.nodeID, outputNode.nodeType, outputNode.nodeLayer, outputNode.sumInput, outputNode.sumOutput));
         }
 
         // copy connections
@@ -271,7 +332,7 @@ public class Brain {
 
     @Override
     public String toString() {
-        return "Brain " + this.brainID + " of specie " + this.speciesID + " has " + this.neatParameters.inputNodes.size() + " inputs, "
+        return "This brain (Brain " + this.brainID + ") of specie " + this.speciesID + " has " + this.neatParameters.inputNodes.size() + " inputs, "
                 + this.neatParameters.hiddenNodesNumber + " hidden nodes and " + this.neatParameters.outputNodes.size() + " outputs."
                 + "It has " + this.neatParameters.connections.size() + " connections.";
     }

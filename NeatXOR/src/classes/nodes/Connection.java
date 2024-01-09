@@ -16,4 +16,9 @@ public class Connection {
         this.isEnabled = isEnabled;
         this.isRecurrent = isRecurrent;
     }
+
+    @Override
+    public String toString() {
+        return "Connection " + this.innovationID + " goes from Node " + this.inNodeID + " to Node " + this.outNodeID + " and has a weight of " + this.weight;
+    }
 }

@@ -98,7 +98,7 @@ public class Main {
 
             // 2. COLLECT INFO ABOUT GENERATION AND UPDATE PARAMETERS
             // First use Speciation to give a speciesID to each brain in the generation global static variable.
-            SpeciesHelper.setSpeciesIDs(generationsNumber, generationMembers, species, c1, c2, c3, speciationThreshold);
+            SpeciesHelper.setSpeciesIDs(actualGeneration, generationMembers, species, c1, c2, c3, speciationThreshold);
 
             // Divide the fitness by the amount of brains having the speciesID
             ParametersHelper.adjustFitness(generationMembers);
@@ -122,7 +122,7 @@ public class Main {
             speciationThreshold = ParametersHelper.adjustThreshold(generationMembers, speciationThreshold, targetSpeciesAmount, stepSizeForThreshold);
 
             // Display information about the generation that just played
-            DisplayGenerationInformation(actualGeneration);
+//            DisplayGenerationInformation(actualGeneration);
 
             // Update best brain in generation and display it
             bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
@@ -144,7 +144,7 @@ public class Main {
 
             // 4. MUTATION
 
-            // Mutate brains (80% chance that its weights will be modified)
+            // Mutate brains (80% chance that its weights will be modified, 5% chance of having a new connection)
             BrainsHelper.mutateBrains(generationMembers);
             // And the generation that was used just before is in temporaryGenerationMembers.
             // TODO: Update species ????
@@ -180,38 +180,38 @@ public class Main {
 
         // Loop on every existing species
         for(Specie existingSpecie: species){
+            if(!existingSpecie.members.isEmpty()){
+                // select parents
+                List<Brain> parents = existingSpecie.selectParentsForNextGen(tournamentSize, existingSpecie.members);
 
-            // select parents
-            List<Brain> parents = existingSpecie.selectParentsForNextGen(tournamentSize, existingSpecie.members);
+                // create offsprings and add them to the generation
+                for(int i =0; i < existingSpecie.offspring; i++){
+                    //create a new empty Brain
+                    NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
+                    Brain offspring = new Brain(neatParameters, brainIDsCounter);
 
-            // create offsprings and add them to the generation
-            for(int i =0; i < existingSpecie.offspring; i++){
-                //create a new empty Brain
-                NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
-                Brain offspring = new Brain(neatParameters, brainIDsCounter);
+                    // Clone everything from the fittest parent
+                    offspring.copyFrom(BrainsHelper.getFittestBrain(parents.get(0), parents.get(1)));
 
-                // Clone everything from the fittest parent
-                offspring.copyFrom(BrainsHelper.getFittestBrain(parents.get(0), parents.get(1)));
+                    // Till now, the offspring is exactly the same as its fittest parent
+                    // We will now cross the connections.
+                    offspring.neatParameters.connections = ConnectionsHelper.getMatchingConnectionsWithRandomlyPickedWeights(parents.get(0), parents.get(1));
 
-                // Till now, the offspring is exactly the same as its fittest parent
-                // We will now cross the connections.
-                offspring.neatParameters.connections = ConnectionsHelper.getMatchingConnectionsWithRandomlyPickedWeights(parents.get(0), parents.get(1));
+                    // Finally, get a new id for the offspring
+                    // Since I know how many brains I added yet, I can increment this value by one.
+                    offspring.brainID = addedToNextGenCounter + 1;
 
-                // Finally, get a new id for the offspring
-                // Since I know how many brains I added yet, I can increment this value by one.
-                offspring.brainID = addedToNextGenCounter + 1;
+                    // Reinitialize parameters that will be updated when it plays
+                    offspring.fitness = 0.0;
+                    offspring.adjustedFitness = 0.0;
 
-                // Reinitialize parameters that will be updated when it plays
-                offspring.fitness = 0.0;
-                offspring.adjustedFitness = 0.0;
+                    // Now the offspring should have everything it needs.
+                    // Add the offspring to the next generation population
+                    generationMembers.add(offspring);
 
-                // Now the offspring should have everything it needs.
-                // TODO: MUTATION
-                // Add the offspring to the next generation population
-                generationMembers.add(offspring);
-
-                // And increment counter
-                addedToNextGenCounter++;
+                    // And increment counter
+                    addedToNextGenCounter++;
+                }
             }
         }
 //        for(Brain brain : generationMembers){
@@ -227,14 +227,9 @@ public class Main {
     private static void DisplayGenerationInformation(int actualGeneration){
         System.out.println("____________________ GENERATION " + actualGeneration + " ____________________");
         for (Specie specie : species) {
-            // Print all the information about the specie
-            System.out.println(specie.toString());
-            for(Brain member : specie.members){
-                for(Connection connection : member.neatParameters.connections){
-                    if(connection.weight > 1.0 || connection.weight < -1.0){
-                        System.out.println("probleme pour la connexion " + connection.innovationID + " du brain " + member.brainID);
-                    }
-                }
+            if(!specie.members.isEmpty()){
+                // Print all the information about the specie
+                System.out.println(specie);
             }
         }
     }
@@ -243,6 +238,10 @@ public class Main {
         if (bestBrain != null) {
             System.out.println("In generation " + actualGeneration + ", " + "the best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
+            System.out.println(bestBrain);
+            for(Connection connection : bestBrain.neatParameters.connections){
+                System.out.println(connection);
+            }
             System.out.println("_______________________________________________________");
             //Show network topology
 //            bestBrain.drawNetwork();

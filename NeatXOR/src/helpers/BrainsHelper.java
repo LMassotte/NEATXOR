@@ -9,7 +9,10 @@ public class BrainsHelper {
 
     public static void mutateBrains(List<Brain> brains){
         for(Brain brain : brains){
-            brain.mutate();
+            // 80% chance that its connections weights are modified
+            brain.mutateWeights();
+            // 5% chance of having a new connection
+            brain.mutateNewConnection();
         }
     }
     public static Brain selectRandomBrain(List<Brain> brains) {

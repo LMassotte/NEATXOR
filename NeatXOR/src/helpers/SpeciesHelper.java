@@ -11,11 +11,11 @@ public class SpeciesHelper {
         return species.stream().filter(specie -> specie.specieID == specieID).toList();
     }
 
-    public static void setSpeciesIDs(int generationsNumber, List<Brain> generationMembers, List<Specie> species, double c1, double c2, double c3, double speciationThreshold) {
+    public static void setSpeciesIDs(int actualGeneration, List<Brain> generationMembers, List<Specie> species, double c1, double c2, double c3, double speciationThreshold) {
         // For the first generation, the leaders of each specie are picked randomly out of the population that hasn't a specieID yet.
         // From Gen 2 onwards, leaders of species are picked out of the population that already has the specieID !
         // Gen 1
-        if (generationsNumber == 1) {
+        if (actualGeneration == 1) {
             setSpeciesIDsForBrainsWithoutSpecie(generationMembers, c1, c2, c3, speciationThreshold);
         }
         // Gen 2 -> Max Gen
@@ -98,13 +98,12 @@ public class SpeciesHelper {
         // Return a leader of each existing specie in the generation.
         List<Brain> leadersList = new ArrayList<>();
         for (Specie specie : species) {
-            List<Brain> brainsOfSameSpecie = BrainsHelper.getSameSpeciesBrain(specie.specieID, generationMembers);
-            Brain leaderBrain = BrainsHelper.selectRandomBrain(brainsOfSameSpecie);
-            // TODO : fix leaderBrain == null issue
-            leadersList.add(leaderBrain);
-//            if (!brainsOfSameSpecie.isEmpty()) {
-//                leadersList.add(BrainsHelper.selectRandomBrain(brainsOfSameSpecie));
-//            }
+            if(!specie.members.isEmpty()){
+                List<Brain> brainsOfSameSpecie = BrainsHelper.getSameSpeciesBrain(specie.specieID, generationMembers);
+                Brain leaderBrain = BrainsHelper.selectRandomBrain(brainsOfSameSpecie);
+                // TODO : fix leaderBrain == null issue
+                leadersList.add(leaderBrain);
+            }
         }
         return leadersList;
     }
