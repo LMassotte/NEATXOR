@@ -127,6 +127,7 @@ public class Brain {
             int counter = 0;
             while (counter < 20) {
                 boolean validationFlag = true;
+                boolean reenabledConnectionFlag = false;
                 inNode = brainNodes.get(rand.nextInt(brainNodes.size()));
                 outNode = brainNodes.get(rand.nextInt(brainNodes.size()));
 
@@ -145,6 +146,20 @@ public class Brain {
                 // Fourth verification : no existing connection from this input to this output
                 for (Connection connection : this.neatParameters.connections) {
                     if (connection.inNodeID == inNode.nodeID && connection.outNodeID == outNode.nodeID) {
+                        // If there is a connection between the 2 nodes
+                        // AND if it is actually disabled
+                        // 25% chance of it being enabled again
+                        // If it's re-enabled, break out of the foreach loop and reset inNode and outNode to -1 values.
+                        if(!connection.isEnabled){
+                            int enablingConnectionRandomChances = rand.nextInt(100) + 1;
+                            if(enablingConnectionRandomChances <= 25){
+                                inNode = new Node();
+                                outNode = new Node();
+                                connection.isEnabled = true;
+                                reenabledConnectionFlag = true;
+                                break;
+                            }
+                        }
                         validationFlag = false;
                     }
                     // Just to be sure, check if the connection hasn't been created backward
@@ -152,8 +167,8 @@ public class Brain {
                         validationFlag = false;
                     }
                 }
-                if (validationFlag) {
-                    System.out.println("test");
+                // If eligible nodes have been found OR a connection has been re-enabled, break out of the loop.
+                if (validationFlag || reenabledConnectionFlag) {
                     break;
                 }
                 if(counter == 19){
