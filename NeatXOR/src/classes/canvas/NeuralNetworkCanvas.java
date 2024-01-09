@@ -76,7 +76,7 @@ public class NeuralNetworkCanvas extends JPanel {
         int inX = 0, inY = 0, outX = 0, outY = 0;
         double maxHeight = maxNodesCount * 50 + 10;
 
-        for (Connection connection : connections) {
+        for (Connection connection : connections.stream().filter(co -> co.isEnabled).toList()) {
             Color color = connection.isRecurrent ? Color.blue : connection.isEnabled ? Color.green : Color.red;
             g.setColor(color);
             Node inNode = findNodeById(connection.inNodeID);

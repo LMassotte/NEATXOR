@@ -37,13 +37,12 @@ public class BrainsHelper {
         return brains.stream().filter(brain -> brain.speciesID == -1).toList();
     }
 
-    public static Brain updateBestBrain(Brain bestBrain, List<Brain> generationMembers, double bestAdjustedFitnessInPopulation) {
+    public static Brain updateBestBrain(Brain bestBrain, List<Brain> generationMembers) {
         // find and display best brain in generation
         for (Brain generationBrain : generationMembers) {
-            if (generationBrain.adjustedFitness > bestAdjustedFitnessInPopulation) {
+            if (generationBrain.adjustedFitness > bestBrain.adjustedFitness) {
                 bestBrain = new Brain(generationBrain.neatParameters, -1);
                 bestBrain.copyFrom(generationBrain);
-                bestAdjustedFitnessInPopulation = generationBrain.adjustedFitness;
             }
         }
         return bestBrain;

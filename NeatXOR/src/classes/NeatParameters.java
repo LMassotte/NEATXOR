@@ -8,9 +8,6 @@ import java.util.List;
 
 public class NeatParameters {
     public int populationSize;
-    public int inputNodesNumber;
-    public int outputNodesNumber;
-    public int hiddenNodesNumber;
     public List<Node> inputNodes;
     public List<Node> hiddenNodes;
     public  List<Node> outputNodes;
@@ -22,7 +19,7 @@ public class NeatParameters {
     //will be incremented everytime a new connection is created
     public int innovationIDsCounter;
 
-    public NeatParameters(int populationSize, int inputNodesNumber, int outputNodesNumber, int hiddenNodesNumber, double percentageConn){
+    public NeatParameters(int populationSize, double percentageConn){
         this.populationSize = populationSize;
         this.percentageConn = percentageConn;
         this.inputNodes = new ArrayList<>();
@@ -31,7 +28,7 @@ public class NeatParameters {
         this.connections = new ArrayList<>();
 
         this.nodeIDsCounter = 1;
-        this.innovationIDsCounter = 5;
+        this.innovationIDsCounter = 1;
     }
 
     public void reinitializeParameters(){
@@ -41,7 +38,7 @@ public class NeatParameters {
         this.connections = new ArrayList<>();
 
         this.nodeIDsCounter = 1;
-        this.innovationIDsCounter = 5;
+        this.innovationIDsCounter = 1;
     }
 
     @Override

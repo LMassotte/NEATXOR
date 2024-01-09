@@ -1,23 +1,22 @@
 import classes.neuralNetworks.Brain;
 import classes.NeatParameters;
 import classes.neuralNetworks.Specie;
-import classes.nodes.Connection;
 import helpers.BrainsHelper;
 import helpers.ConnectionsHelper;
 import helpers.ParametersHelper;
 import helpers.SpeciesHelper;
 
+import javax.swing.*;
 import java.util.*;
 
 public class Main {
+    // jframe
+    public static JFrame frame = new JFrame("Neural Network Visualization");
     // general parameters
     public static boolean isElitist = false;
-    public static int generationsNumber = 100;
+    public static int generationsNumber = 1000;
     public static int brainIDsCounter = 1;
-    public static int popSize = 1;
-    public static int inputNodesNumber = 3;
-    public static int outputNodesNumber = 1;
-    public static int hiddenNodesNumber = 0;
+    public static int popSize = 50;
     public static double percentageConn = 1.0;
     // goal
     public static double targetFitness = 3.7;
@@ -29,16 +28,14 @@ public class Main {
     // First threshold is very high, and for each generation where all the nn are in the same specie, decrement it by the step size.
     // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
     // Ken uses a step size of 0.3.
-    public static double stepSizeForThreshold = 0.01;
-    public static double speciationThreshold = 1.0;
+    public static double stepSizeForThreshold = 0.5;
+    public static double speciationThreshold = 100;
 
     // used during crossover
     public static int tournamentSize = 3;
 
     //used to keep data through generations
-    public static double bestAdjustedFitnessInPopulation = 0;
-    public static Brain bestBrain = null;
-    public static List<Brain> bestBrainsFromEachGeneration;
+    public static Brain bestBrain;
     public static List<Brain> generationMembers;
     public static List<Brain> temporaryGenerationMembers;
     public static List<Specie> species;
@@ -52,12 +49,17 @@ public class Main {
         inputValuesList.add(new double[]{1.0, 0.0, 1.0});
         inputValuesList.add(new double[]{1.0, 1.0, 1.0});
 
-        species = new ArrayList<>();
-        bestBrainsFromEachGeneration = new ArrayList<>();
-
+        NeatParameters neatParameters = new NeatParameters(popSize, percentageConn);
         brainIDsCounter = 1;
+        bestBrain = new Brain(neatParameters, 1);
+        bestBrain.adjustedFitness = 0.0;
+
+        species = new ArrayList<>();
+
+
         //for each generation
-        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
+//        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
+        for (int actualGeneration = 1; bestBrain.adjustedFitness < 3.9; actualGeneration++) {
             // 1. GENERATION PLAYS
 
             // Initialize first generation if needed
@@ -65,7 +67,7 @@ public class Main {
                 generationMembers = new ArrayList<>();
                 for (int i = 0; i < popSize; i++) {
                     //build neatParameters and Brain
-                    NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
+                    neatParameters = new NeatParameters(popSize, percentageConn);
                     Brain brain = new Brain(neatParameters, brainIDsCounter);
                     //increment counter so that each brain has a unique ID.
                     ++brainIDsCounter;
@@ -75,7 +77,7 @@ public class Main {
                         brain.loadInputs(inputValues);
                         brain.runNetwork();
                         // set fitness
-                        brain.fitness += brain.getOutput(brain.outputNodeID);
+                        brain.fitness += brain.getOutput(brain.getOutputNodeID());
                     }
                     // add brain to the generation's population
                     generationMembers.add(brain);
@@ -86,12 +88,12 @@ public class Main {
                 // Population is already initialized (cfr 3. of last generation)
                 for (int i = 0; i < popSize; i++) {
                     // each brain will play with the 4 possible values of XOR, weights are randomized
-                    for (int j = 0; j < generationMembers.get(i).neatParameters.inputNodesNumber; j++) {
+                    for (int j = 0; j < generationMembers.get(i).neatParameters.inputNodes.size(); j++) {
                         // run network to update outputs of each node
                         // what has changed ? connections and their weights
                         generationMembers.get(i).runNetwork();
                         // set fitness
-                        generationMembers.get(i).fitness += generationMembers.get(i).getOutput(generationMembers.get(i).outputNodeID);
+                        generationMembers.get(i).fitness += generationMembers.get(i).getOutput(generationMembers.get(i).getOutputNodeID());
                     }
                 }
             }
@@ -125,11 +127,10 @@ public class Main {
 //            DisplayGenerationInformation(actualGeneration);
 
             // Update best brain in generation and display it
-            bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers, bestAdjustedFitnessInPopulation);
-            bestBrainsFromEachGeneration.add(bestBrain);
+            bestBrain = BrainsHelper.updateBestBrain(bestBrain, generationMembers);
 
             // Draw best brain and display information about the generation
-            DrawBestBrain(actualGeneration);
+//            DrawBestBrain(actualGeneration);
 
             // 3. CREATE THE NEXT GENERATION
 
@@ -146,23 +147,19 @@ public class Main {
 
             // Mutate brains (80% chance that its weights will be modified, 5% chance of having a new connection)
             BrainsHelper.mutateBrains(generationMembers);
-            // And the generation that was used just before is in temporaryGenerationMembers.
-            updateSpeciesMembersList();
-//            for(Specie specie : species){
-//                System.out.println(specie);
-//                System.out.println("_____MEMBERS_____");
-//                for(Brain brain : specie.members){
-//                    System.out.println("                    " + brain);
-//                }
-//            }
 
+            // Update species list with updated members
+            updateSpeciesMembersList();
 
             // 4. ELITISM
             if(isElitist){
                 generationMembers.set(0, bestBrain);
             }
+//            generationMembers.get(0).drawNetwork(frame);
+            DisplayBestBrain(actualGeneration);
 
         }
+        bestBrain.drawNetwork(frame);
     }
 
     private static void updateSpeciesMembersList(){
@@ -186,7 +183,7 @@ public class Main {
                 // create offsprings and add them to the generation
                 for(int i =0; i < existingSpecie.offspring; i++){
                     //create a new empty Brain
-                    NeatParameters neatParameters = new NeatParameters(popSize, inputNodesNumber, outputNodesNumber, hiddenNodesNumber, percentageConn);
+                    NeatParameters neatParameters = new NeatParameters(popSize, percentageConn);
                     Brain offspring = new Brain(neatParameters, brainIDsCounter);
 
                     // Clone everything from the fittest parent
@@ -233,17 +230,11 @@ public class Main {
         }
     }
 
-    private static void DrawBestBrain(int actualGeneration){
+    private static void DisplayBestBrain(int actualGeneration){
         if (bestBrain != null) {
             System.out.println("In generation " + actualGeneration + ", " + "the best brain is brain " + bestBrain.brainID + " from specie " + bestBrain.speciesID);
             System.out.println("It has a fitness = " + bestBrain.fitness + ", and an adjusted fitness = " + bestBrain.adjustedFitness);
-            System.out.println(bestBrain);
-            for(Connection connection : bestBrain.neatParameters.connections){
-                System.out.println(connection);
-            }
             System.out.println("_______________________________________________________");
-            //Show network topology
-//            bestBrain.drawNetwork();
         }
     }
 }

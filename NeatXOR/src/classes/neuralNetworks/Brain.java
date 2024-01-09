@@ -14,7 +14,6 @@ import static java.lang.Math.exp;
 public class Brain {
     public int brainID;
     public NeatParameters neatParameters;
-    public int outputNodeID;
     public double fitness;
     public double adjustedFitness;
     public int speciesID;
@@ -36,13 +35,15 @@ public class Brain {
         addNode(3, 1, 0, 0);
         addNode(2, 3, 0, 0);
 
-        outputNodeID = neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).nodeID;
-
         if (generationNumber == 1) {
-            addConnection(1, outputNodeID, true, false);
-            addConnection(2, outputNodeID, true, false);
-            addConnection(3, outputNodeID, true, false);
+            addConnection(1, getOutputNodeID(), true, false);
+            addConnection(2, getOutputNodeID(), true, false);
+            addConnection(3, getOutputNodeID(), true, false);
         }
+    }
+
+    public int getOutputNodeID(){
+        return neatParameters.outputNodes.get(neatParameters.outputNodes.size() - 1).nodeID;
     }
 
     //always add a node through this to ensure that ids are different
@@ -92,11 +93,10 @@ public class Brain {
     }
     public void addConnectionWithWeight(int inNodeID, int outNodeID, double weight, boolean isEnabled, boolean isRecurrent) {
         neatParameters.connections.add(new Connection(neatParameters.innovationIDsCounter, inNodeID, outNodeID, weight, isEnabled, isRecurrent));
-        neatParameters.innovationIDsCounter += 1000;
+        neatParameters.innovationIDsCounter += 1;
     }
 
-    public void drawNetwork() {
-        JFrame frame = new JFrame("Neural Network Visualization");
+    public void drawNetwork(JFrame frame) {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         NeuralNetworkCanvas canvas = new NeuralNetworkCanvas(
@@ -107,13 +107,13 @@ public class Brain {
         );
 
         frame.getContentPane().add(canvas);
-        frame.setSize(500, 500);
+        frame.setSize(1000, 1000);
 
         frame.setVisible(true);
     }
 
     public void loadInputs(double[] inputValuesList) {
-        int max = Math.max(inputValuesList.length, neatParameters.inputNodesNumber);
+        int max = Math.max(inputValuesList.length, neatParameters.inputNodes.size());
         for (int i = 0; i < max; i++) {
             neatParameters.inputNodes.get(i).sumInput = inputValuesList[i];
             //input nodes => sum input = sum output
@@ -156,7 +156,7 @@ public class Brain {
         // Keep in memory the visited nodes
         Set<Integer> visitedNodeIDs = new HashSet<>();
         for(Connection connection : this.neatParameters.connections){
-            if(outputNodeID == hiddenNode.nodeID){
+            if(connection.outNodeID == hiddenNode.nodeID){
                 int currentDistance = depthFirstSearch(connection.inNodeID, visitedNodeIDs);
                 distance = Math.max(distance, currentDistance);
             }
@@ -190,28 +190,30 @@ public class Brain {
     public void mutateNewNode(){
         Random rand = new Random();
         int randomBrainMutationPercentage = rand.nextInt(100) + 1;
-        if (randomBrainMutationPercentage <= 5) {
+        if (randomBrainMutationPercentage <= 15) {
             Connection randomBrainConnection = ConnectionsHelper.getRandomConnectionInList(this.neatParameters.connections);
             if(randomBrainConnection != null){
                 // Get the in and out node of the connection in tmp variables
                 Node tmpInNode = findNodeById(randomBrainConnection.inNodeID);
                 Node tmpOutNode = findNodeById(randomBrainConnection.outNodeID);
 
-                // Disable connection
-                this.neatParameters.connections.stream()
-                        .filter(connection -> connection.innovationID == randomBrainConnection.innovationID)
-                        .forEach(connection -> connection.isEnabled = false);
+                if(tmpInNode != null && tmpOutNode != null){
+                    // Disable connection
+                    this.neatParameters.connections.stream()
+                            .filter(connection -> connection.innovationID == randomBrainConnection.innovationID)
+                            .forEach(connection -> connection.isEnabled = false);
 
-                // Add a new hidden node (type = 0) with layer = -1, sumInput = 0 et sumOutput = 0
-                Node newNode = this.addNode(0, -1, 0, 0);
+                    // Add a new hidden node (type = 0) with layer = -1, sumInput = 0 et sumOutput = 0
+                    Node newNode = this.addNode(0, -1, 0, 0);
 
-                // Add 2 new connections
-                // First connection has tmpInNode as input node and new node as output node, weight = disabled connection's weight
-                this.addConnectionWithWeight(tmpInNode.nodeID, newNode.nodeID, randomBrainConnection.weight, true, false);
-                // Second has newNode as input node and tmpOutNode as output node, weight = random
-                this.addConnection(newNode.nodeID, tmpOutNode.nodeID, true, false);
+                    // Add 2 new connections
+                    // First connection has tmpInNode as input node and new node as output node, weight = disabled connection's weight
+                    this.addConnectionWithWeight(tmpInNode.nodeID, newNode.nodeID, randomBrainConnection.weight, true, false);
+                    // Second has newNode as input node and tmpOutNode as output node, weight = random
+                    this.addConnection(newNode.nodeID, tmpOutNode.nodeID, true, false);
 
-                this.resetLayers();
+                    this.resetLayers();
+                }
             }
         }
     }
@@ -351,7 +353,7 @@ public class Brain {
                                 hiddenNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
                             }
                         }
-                        hiddenNode.sumOutput = 1 / (1 + exp(4.9 - hiddenNode.sumInput));
+                        hiddenNode.sumOutput = 1 / (1 + exp(-4.9 * hiddenNode.sumInput));
                     }
                 }
             }
@@ -412,14 +414,10 @@ public class Brain {
         // copy parameters
         this.brainID = other.brainID;
         this.neatParameters = new NeatParameters(other.neatParameters.populationSize,
-                other.neatParameters.inputNodesNumber,
-                other.neatParameters.outputNodesNumber,
-                other.neatParameters.hiddenNodesNumber,
                 other.neatParameters.percentageConn);
 
         this.fitness = other.fitness;
         this.adjustedFitness = other.adjustedFitness;
-        this.outputNodeID = other.outputNodeID;
         this.speciesID = other.speciesID;
 
         // copy input nodes
@@ -455,6 +453,6 @@ public class Brain {
     public String toString() {
         return "This brain (Brain " + this.brainID + ") of specie " + this.speciesID + " has " + this.neatParameters.inputNodes.size() + " inputs, "
                 + this.neatParameters.hiddenNodes.size() + " hidden nodes and " + this.neatParameters.outputNodes.size() + " outputs."
-                + "It has " + this.neatParameters.connections.size() + " connections.";
+                + "It has " + this.neatParameters.connections.stream().filter(co -> co.isEnabled).toList().size() + " enabled connections.";
     }
 }
