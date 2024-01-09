@@ -112,12 +112,17 @@ public class Brain {
         frame.setVisible(true);
     }
 
-    public void loadInputs(double[] inputValuesList) {
-        int max = Math.max(inputValuesList.length, neatParameters.inputNodes.size());
+    public void loadInput(double inputValue, int index){
+        neatParameters.inputNodes.get(index).sumInput = inputValue;
+        neatParameters.inputNodes.get(index).sumOutput = inputValue;
+    }
+
+    public void loadInputs(double[] inputValues) {
+        int max = Math.max(inputValues.length, neatParameters.inputNodes.size());
         for (int i = 0; i < max; i++) {
-            neatParameters.inputNodes.get(i).sumInput = inputValuesList[i];
+            // For input node
+            neatParameters.inputNodes.get(i).sumInput = inputValues[i];
             //input nodes => sum input = sum output
-            neatParameters.inputNodes.get(i).sumOutput = inputValuesList[i];
         }
     }
 
@@ -304,7 +309,7 @@ public class Brain {
         int randomBrainMutationPercentage = rand.nextInt(100) + 1;
         // 80% chances of mutation
         if (randomBrainMutationPercentage <= 80) {
-            for (Connection connection : this.neatParameters.connections) {
+            for (Connection connection : this.neatParameters.connections.stream().filter(co -> co.isEnabled).toList()) {
                 int randomConnectionMutationPercentage = rand.nextInt(100) + 1;
                 if (randomConnectionMutationPercentage <= 90) {
                     int randomAddOrSubstract = rand.nextInt(2);
@@ -346,7 +351,7 @@ public class Brain {
                 for (Node hiddenNode : neatParameters.hiddenNodes) {
                     if (hiddenNode.nodeLayer == layerCount) {
                         hiddenNode.sumInput = 0;
-                        for (Connection connection : neatParameters.connections) {
+                        for (Connection connection : neatParameters.connections.stream().filter(co -> co.isEnabled).toList()) {
                             if (hiddenNode.nodeID == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
                                 assert connectionInputNode != null;
@@ -362,14 +367,14 @@ public class Brain {
                 for (Node outputNode : neatParameters.outputNodes) {
                     if (outputNode.nodeLayer == layerCount) {
                         outputNode.sumInput = 0;
-                        for (Connection connection : neatParameters.connections) {
+                        for (Connection connection : neatParameters.connections.stream().filter(co -> co.isEnabled).toList()) {
                             if (outputNode.nodeID == connection.outNodeID) {
                                 Node connectionInputNode = findNodeById(connection.inNodeID);
                                 assert connectionInputNode != null;
                                 outputNode.sumInput += (connectionInputNode.sumOutput * connection.weight);
                             }
                         }
-                        outputNode.sumOutput = 1 / (1 + exp(-outputNode.sumInput));
+                        outputNode.sumOutput = 1 / (1 + exp(-4.9 * outputNode.sumInput));
                     }
                 }
             }

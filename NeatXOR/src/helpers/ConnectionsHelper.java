@@ -18,7 +18,7 @@ public class ConnectionsHelper {
     }
     public static Set<Integer> getInnovationIDSet(List<Connection> connections) {
         Set<Integer> innovationIDSet = new HashSet<>();
-        for (Connection connection : connections) {
+        for (Connection connection : connections.stream().filter(co -> co.isEnabled).toList()) {
             innovationIDSet.add(connection.innovationID);
         }
         return innovationIDSet;
@@ -26,7 +26,7 @@ public class ConnectionsHelper {
 
     public static int getHighestInnovationID(List<Connection> connections) {
         int highestInnovationID = 0;
-        for (Connection connection : connections) {
+        for (Connection connection : connections.stream().filter(co -> co.isEnabled).toList()) {
             if (connection.innovationID > highestInnovationID) {
                 highestInnovationID = connection.innovationID;
             }
@@ -81,7 +81,7 @@ public class ConnectionsHelper {
 
         Set<Integer> innovationIDSetBrain2 = ConnectionsHelper.getInnovationIDSet(brain2Connections);
 
-        for (Connection connection : brain1Connections) {
+        for (Connection connection : brain1Connections.stream().filter(co -> co.isEnabled).toList()) {
             if (innovationIDSetBrain2.contains(connection.innovationID)) {
                 matchingConnections.add(connection);
             }
@@ -97,7 +97,7 @@ public class ConnectionsHelper {
 
         Set<Integer> innovationIDSetBrain1 = ConnectionsHelper.getInnovationIDSet(brain1Connections);
 
-        for (Connection connection : brain2Connections) {
+        for (Connection connection : brain2Connections.stream().filter(co -> co.isEnabled).toList()) {
             if (innovationIDSetBrain1.contains(connection.innovationID)) {
                 matchingConnections.add(connection);
             }
@@ -120,12 +120,12 @@ public class ConnectionsHelper {
         List<Connection> commonListCompared = new ArrayList<>();
 
         // Fill the common lists
-        for (Connection connection : leaderConnections) {
+        for (Connection connection : leaderConnections.stream().filter(co -> co.isEnabled).toList()) {
             if (innovationIDSetCompared.contains(connection.innovationID)) {
                 commonListLeader.add(connection);
             }
         }
-        for (Connection connection : comparedConnections) {
+        for (Connection connection : comparedConnections.stream().filter(co -> co.isEnabled).toList()) {
             if (innovationIDSetLeader.contains(connection.innovationID)) {
                 commonListCompared.add(connection);
             }
@@ -175,7 +175,7 @@ public class ConnectionsHelper {
         // First we check how many connections are in the leader list and not in the compared one.
         // get a list of all compared innovation IDs
         Set<Integer> innovationIDsSet = ConnectionsHelper.getInnovationIDSet(comparedConnections);
-        for (Connection leaderConnection : leaderConnections) {
+        for (Connection leaderConnection : leaderConnections.stream().filter(co -> co.isEnabled).toList()) {
             if (leaderConnection.innovationID < highestInnovationIDInSmallestList) {
                 if (!innovationIDsSet.contains(leaderConnection.innovationID)) {
                     ++result;
@@ -184,7 +184,7 @@ public class ConnectionsHelper {
         }
         // Then we do the opposite
         innovationIDsSet = ConnectionsHelper.getInnovationIDSet(leaderConnections);
-        for (Connection comparedConnection : comparedConnections) {
+        for (Connection comparedConnection : comparedConnections.stream().filter(co -> co.isEnabled).toList()) {
             if (comparedConnection.innovationID < highestInnovationIDInSmallestList) {
                 if (!innovationIDsSet.contains(comparedConnection.innovationID)) {
                     ++result;
@@ -201,7 +201,7 @@ public class ConnectionsHelper {
         int highestInnovationIDCompared = getHighestInnovationID(brainCompared.neatParameters.connections);
         // If leader has higher innovationIDs than compared brain, count how many.
         if (highestInnovationIDLeader > highestInnovationIDCompared) {
-            for (Connection leaderConnection : brainLeader.neatParameters.connections) {
+            for (Connection leaderConnection : brainLeader.neatParameters.connections.stream().filter(co -> co.isEnabled).toList()) {
                 if (leaderConnection.innovationID > highestInnovationIDCompared) {
                     ++result;
                 }
@@ -209,7 +209,7 @@ public class ConnectionsHelper {
         }
         // If compared brain has higher innovationIDs than leader brain, count how many.
         else if (highestInnovationIDCompared > highestInnovationIDLeader) {
-            for (Connection comparedConnection : brainCompared.neatParameters.connections) {
+            for (Connection comparedConnection : brainCompared.neatParameters.connections.stream().filter(co -> co.isEnabled).toList()) {
                 if (comparedConnection.innovationID > highestInnovationIDLeader) {
                     ++result;
                 }

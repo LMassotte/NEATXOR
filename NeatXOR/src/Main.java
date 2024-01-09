@@ -13,13 +13,14 @@ public class Main {
     // jframe
     public static JFrame frame = new JFrame("Neural Network Visualization");
     // general parameters
+    public static double fitnessMax = 4;
     public static boolean isElitist = false;
     public static int generationsNumber = 1000;
     public static int brainIDsCounter = 1;
     public static int popSize = 50;
     public static double percentageConn = 1.0;
     // goal
-    public static double targetFitness = 3.7;
+    public static double targetFitness = 3.99;
     public static int targetSpeciesAmount = 5;
 
     // used during speciation
@@ -42,12 +43,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        //possible values for xor
-        List<double[]> inputValuesList = new ArrayList<>();
-        inputValuesList.add(new double[]{0.0, 0.0, 1.0});
-        inputValuesList.add(new double[]{0.0, 1.0, 1.0});
-        inputValuesList.add(new double[]{1.0, 0.0, 1.0});
-        inputValuesList.add(new double[]{1.0, 1.0, 1.0});
+
 
         NeatParameters neatParameters = new NeatParameters(popSize, percentageConn);
         brainIDsCounter = 1;
@@ -58,8 +54,8 @@ public class Main {
 
 
         //for each generation
-//        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
-        for (int actualGeneration = 1; bestBrain.adjustedFitness < 3.9; actualGeneration++) {
+        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
+//        for (int actualGeneration = 1; bestBrain.adjustedFitness < 3.9; actualGeneration++) {
             // 1. GENERATION PLAYS
 
             // Initialize first generation if needed
@@ -73,12 +69,9 @@ public class Main {
                     ++brainIDsCounter;
                     brain.initialize(actualGeneration);
                     // first generation's members will play with the 4 possible values of XOR, weights are randomized
-                    for (double[] inputValues : inputValuesList) {
-                        brain.loadInputs(inputValues);
-                        brain.runNetwork();
-                        // set fitness
-                        brain.fitness += brain.getOutput(brain.getOutputNodeID());
-                    }
+
+                    runXOR(brain);
+
                     // add brain to the generation's population
                     generationMembers.add(brain);
                 }
@@ -87,14 +80,8 @@ public class Main {
             else{
                 // Population is already initialized (cfr 3. of last generation)
                 for (int i = 0; i < popSize; i++) {
-                    // each brain will play with the 4 possible values of XOR, weights are randomized
-                    for (int j = 0; j < generationMembers.get(i).neatParameters.inputNodes.size(); j++) {
-                        // run network to update outputs of each node
-                        // what has changed ? connections and their weights
-                        generationMembers.get(i).runNetwork();
-                        // set fitness
-                        generationMembers.get(i).fitness += generationMembers.get(i).getOutput(generationMembers.get(i).getOutputNodeID());
-                    }
+                    // XOR
+                    runXOR(generationMembers.get(i));
                 }
             }
 
@@ -159,7 +146,48 @@ public class Main {
             DisplayBestBrain(actualGeneration);
 
         }
-        bestBrain.drawNetwork(frame);
+//        bestBrain.drawNetwork(frame);
+    }
+
+    private static void runXOR(Brain brain){
+        //possible values for xor
+        List<double[]> inputValuesList = new ArrayList<>();
+        inputValuesList.add(new double[]{0.0, 0.0, 1.0});
+        inputValuesList.add(new double[]{0.0, 1.0, 1.0});
+        inputValuesList.add(new double[]{1.0, 0.0, 1.0});
+        inputValuesList.add(new double[]{1.0, 1.0, 1.0});
+
+        double error = 0.0;
+        for (double[] inputValues : inputValuesList) {
+            // outputValue is the expected result
+            // If {0, 0} or {1, 1}, outputValue = 0
+            // If {0, 1} or {1, 0}, outputValue = 1
+            double outputValue = 0;
+            if(inputValues[0] == 0 && inputValues[1] == 1){
+                outputValue = 1;
+            }
+            if(inputValues[1] == 0 && inputValues[0] == 1){
+                outputValue = 1;
+            }
+            // Ex for {0, 1, 1} :
+            // 0 will be loaded in inputNodes.get(0) (first input node)
+            // 1 will be loaded in inputNodes.get(1) (second input node)
+            // Third input node is a bias, its value is always 1.0
+            int index = 0;
+            for(double value : inputValues){
+                // Load value into node input
+                brain.loadInput(value, index);
+                ++ index;
+            }
+            // Once values are loaded, run the network.
+            brain.runNetwork();
+            System.out.println(brain.getOutput(brain.getOutputNodeID()));
+
+            // Update error :
+            error += Math.abs(outputValue - brain.getOutput(brain.getOutputNodeID()));
+        }
+        // Fitness max - errors
+        brain.fitness = fitnessMax - error;
     }
 
     private static void updateSpeciesMembersList(){
