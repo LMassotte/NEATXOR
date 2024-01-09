@@ -17,7 +17,7 @@ public class Main {
     public static boolean isElitist = false;
     public static int generationsNumber = 1000;
     public static int brainIDsCounter = 1;
-    public static int popSize = 50;
+    public static int popSize = 500;
     public static double percentageConn = 1.0;
     // goal
     public static double targetFitness = 3.99;
@@ -181,7 +181,6 @@ public class Main {
             }
             // Once values are loaded, run the network.
             brain.runNetwork();
-            System.out.println(brain.getOutput(brain.getOutputNodeID()));
 
             // Update error :
             error += Math.abs(outputValue - brain.getOutput(brain.getOutputNodeID()));
