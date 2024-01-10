@@ -17,10 +17,10 @@ public class Main {
     public static boolean isElitist = false;
     public static int generationsNumber = 1000;
     public static int brainIDsCounter = 1;
-    public static int popSize = 500;
+    public static int popSize = 50;
     public static double percentageConn = 1.0;
     // goal
-    public static double targetFitness = 3.99;
+    public static double targetFitness = 3.7;
     public static int targetSpeciesAmount = 5;
 
     // used during speciation
@@ -29,8 +29,8 @@ public class Main {
     // First threshold is very high, and for each generation where all the nn are in the same specie, decrement it by the step size.
     // He also defines a target number of species. If the amount of species gets higher than the target, he increments the threshold by the step size.
     // Ken uses a step size of 0.3.
-    public static double stepSizeForThreshold = 0.5;
-    public static double speciationThreshold = 100;
+    public static double stepSizeForThreshold = 0.01;
+    public static double speciationThreshold = 1.0;
 
     // used during crossover
     public static int tournamentSize = 3;
@@ -54,8 +54,8 @@ public class Main {
 
 
         //for each generation
-        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
-//        for (int actualGeneration = 1; bestBrain.adjustedFitness < 3.9; actualGeneration++) {
+//        for (int actualGeneration = 1; actualGeneration <= generationsNumber; actualGeneration++) {
+        for (int actualGeneration = 1; bestBrain.adjustedFitness < 3.85; actualGeneration++) {
             // 1. GENERATION PLAYS
 
             // Initialize first generation if needed
@@ -91,6 +91,7 @@ public class Main {
 
             // Divide the fitness by the amount of brains having the speciesID
             ParametersHelper.adjustFitness(generationMembers);
+            updateSpeciesMembersList();
 
             // Update the species list. For existing species : update members and offsprings, recompute average fitness, increment gensSinceImproved if needed.
             // For new species : Add a new Specie to the list.

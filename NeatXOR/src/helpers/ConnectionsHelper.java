@@ -41,9 +41,9 @@ public class ConnectionsHelper {
         double weightDifference = getWeightDifference(brainLeader, brainCompared);
         double highestConnectionsAmount = getHighestConnectionsAmount(brainLeader, brainCompared);
 
-        double compatibilityDifference = (c1 * (excessConnections / highestConnectionsAmount)) + (c2 * (disjointConnections / highestConnectionsAmount)) + (c3 * (weightDifference / highestConnectionsAmount));
-
-        return compatibilityDifference;
+        return (c1 * (excessConnections / highestConnectionsAmount))
+                + (c2 * (disjointConnections / highestConnectionsAmount))
+                + (c3 * (weightDifference / highestConnectionsAmount));
     }
 
     public static double getHighestConnectionsAmount(Brain brainLeader, Brain brainCompared) {
@@ -166,8 +166,8 @@ public class ConnectionsHelper {
 
     public static double getDisjointConnections(Brain brainLeader, Brain brainCompared) {
         double result = 0;
-        List<Connection> leaderConnections = brainLeader.neatParameters.connections;
-        List<Connection> comparedConnections = brainCompared.neatParameters.connections;
+        List<Connection> leaderConnections = brainLeader.neatParameters.connections.stream().filter(co -> co.isEnabled).toList();
+        List<Connection> comparedConnections = brainCompared.neatParameters.connections.stream().filter(co -> co.isEnabled).toList();
         // get the highest innovation ID in the list that has the smallest highest one.
         int highestInnovationIDInSmallestList = Math.min(getHighestInnovationID(leaderConnections), getHighestInnovationID(comparedConnections));
 

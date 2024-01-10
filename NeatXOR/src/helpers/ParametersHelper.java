@@ -34,7 +34,7 @@ public class ParametersHelper {
             List<Brain> specieMembers = BrainsHelper.getSameSpeciesBrain(specie.specieID, generationMembers);
             double specieMean = getAverageAdjustedFitnessBySpecie(specie.specieID, generationMembers);
             // Update the offspring value of the specie
-            species.stream().filter(item -> item.specieID == specie.specieID).toList().get(0).offspring = (int)(specieMean / globalMean * specieMembers.size());
+            specie.offspring = (int)(specieMean / globalMean * specieMembers.size());
         }
     }
 
