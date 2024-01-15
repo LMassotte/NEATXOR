@@ -2,9 +2,10 @@ package helpers;
 
 import classes.neuralNetworks.Brain;
 import classes.neuralNetworks.Specie;
-
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 
 public class SpeciesHelper {
     public static List<Specie> getSpeciesWithID(int specieID, List<Specie> species) {
@@ -82,15 +83,13 @@ public class SpeciesHelper {
     }
 
     public static int getDifferentSpeciesCount(List<Brain> generationMembers) {
-        int highestSpecieID = 0;
+        Set<Integer> speciesIDSet = new HashSet<>();
         for (Brain brain : generationMembers) {
-            if (brain.speciesID > highestSpecieID) {
-                highestSpecieID = brain.speciesID;
-            }
+            speciesIDSet.add(brain.speciesID);
         }
 
         // The highest specie ID is always the amount of different species
-        return highestSpecieID;
+        return speciesIDSet.size();
     }
 
 
